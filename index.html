@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Flashcards Medicina - Repetição Espaçada</title>
+  <title>Flashcards Medicina - SRS & Desempenho</title>
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- PDF.js -->
@@ -59,9 +59,9 @@
   <!-- TELA 1: DASHBOARD / PAINEL PRINCIPAL -->
   <main id="dashboard-view" class="w-full max-w-5xl my-6 flex flex-col gap-6">
     
-    <!-- Painel de Revisão Espaçada do Dia -->
+    <!-- Painel 1: Repetição Espaçada (SRS) -->
     <section class="bg-slate-800/80 border border-slate-700/80 rounded-2xl p-6 shadow-xl">
-      <div class="flex flex-col md:flex-row justify-between md:items-center gap-4">
+      <div class="flex flex-col md:flex-row justify-between md:items-center gap-4 mb-4">
         <div>
           <h2 class="text-xl font-bold text-slate-100 flex items-center gap-2">
             <span>🧠</span> Repetição Espaçada (SRS)
@@ -79,13 +79,33 @@
       </div>
     </section>
 
+    <!-- Painel 2: Desempenho Geral e Percentuais -->
+    <section class="bg-slate-800/80 border border-slate-700/80 rounded-2xl p-6 shadow-xl">
+      <h3 class="text-lg font-bold text-slate-100 mb-2 flex items-center gap-2">
+        <span>📊</span> Aproveitamento Geral
+      </h3>
+      <div class="space-y-2">
+        <div class="flex justify-between text-sm font-medium">
+          <span class="text-slate-300">Taxa de Acerto Geral</span>
+          <span id="overall-percentage" class="text-indigo-400 font-bold">0%</span>
+        </div>
+        <div class="w-full bg-slate-900 h-3.5 rounded-full overflow-hidden border border-slate-700/50">
+          <div id="overall-bar" class="bg-indigo-500 h-full rounded-full transition-all duration-500" style="width: 0%"></div>
+        </div>
+        <div class="flex justify-between text-xs text-slate-500 pt-1">
+          <span id="overall-stats-text">0 acertos / 0 erros</span>
+          <button id="reset-stats-btn" class="text-slate-500 hover:text-rose-400 underline transition">Zerar Estatísticas</button>
+        </div>
+      </div>
+    </section>
+
     <!-- Grade de Matérias Cadastradas -->
     <section>
       <div class="flex justify-between items-center mb-4">
         <h3 class="text-lg font-bold text-slate-300 flex items-center gap-2">
           <span>📚</span> Minhas Matérias
         </h3>
-        <button id="reset-srs-btn" class="text-xs text-slate-500 hover:text-rose-400 underline transition">Zerar Histórico de Revisões</button>
+        <button id="reset-srs-btn" class="text-xs text-slate-500 hover:text-rose-400 underline transition">Zerar Agendamento SRS</button>
       </div>
 
       <div id="decks-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -102,6 +122,10 @@
     <!-- Header da Sessão -->
     <div class="w-full flex justify-between items-center mb-2 px-2 text-xs text-slate-400">
       <span id="current-deck-title" class="font-bold text-indigo-400 uppercase tracking-wider">Matéria</span>
+      <div class="flex gap-3 font-semibold">
+        <span class="text-emerald-400">✓ <span id="session-rights">0</span></span>
+        <span class="text-rose-400">✗ <span id="session-wrongs">0</span></span>
+      </div>
       <span id="card-counter" class="text-slate-300 font-medium">Card 1 de 1</span>
     </div>
 
@@ -163,6 +187,8 @@
     let cardsDeck = [];
     let currentCardIndex = 0;
     let currentDeckTitleText = "";
+    let sessionRights = 0;
+    let sessionWrongs = 0;
 
     // Elementos DOM
     const dashboardView = document.getElementById('dashboard-view');
@@ -175,16 +201,98 @@
     const startRandomBtn = document.getElementById('start-random-btn');
     const srsSummaryText = document.getElementById('srs-summary-text');
     const resetSrsBtn = document.getElementById('reset-srs-btn');
+    const resetStatsBtn = document.getElementById('reset-stats-btn');
     const pdfInput = document.getElementById('pdf-input');
+
+    const overallPercentage = document.getElementById('overall-percentage');
+    const overallBar = document.getElementById('overall-bar');
+    const overallStatsText = document.getElementById('overall-stats-text');
 
     const cardInner = document.getElementById('card-inner');
     const cardCounter = document.getElementById('card-counter');
     const currentDeckTitle = document.getElementById('current-deck-title');
+    const sessionRightsEl = document.getElementById('session-rights');
+    const sessionWrongsEl = document.getElementById('session-wrongs');
 
     // Identificação do GitHub
     const pathSegments = window.location.pathname.split('/').filter(Boolean);
     const githubUser = window.location.hostname.split('.')[0];
     const repoName = pathSegments[0] || '';
+
+    /* -------------------------------------------------------------
+       ESTATÍSTICAS & DESEMPENHO (PERCENTUAIS)
+    ------------------------------------------------------------- */
+    function getStats() {
+      const stats = localStorage.getItem('flashcards_med_stats');
+      return stats ? JSON.parse(stats) : {};
+    }
+
+    function saveStats(stats) {
+      localStorage.setItem('flashcards_med_stats', JSON.stringify(stats));
+    }
+
+    function recordAnswer(deckKey, isRight) {
+      const stats = getStats();
+      if (!stats[deckKey]) {
+        stats[deckKey] = { rights: 0, wrongs: 0 };
+      }
+      if (isRight) {
+        stats[deckKey].rights++;
+        sessionRights++;
+      } else {
+        stats[deckKey].wrongs++;
+        sessionWrongs++;
+      }
+      saveStats(stats);
+      updateSessionUI();
+    }
+
+    function calculatePercentage(rights, wrongs) {
+      const total = rights + wrongs;
+      if (total === 0) return 0;
+      return Math.round((rights / total) * 100);
+    }
+
+    function updateDashboardStats() {
+      const stats = getStats();
+      let totalRights = 0;
+      let totalWrongs = 0;
+
+      pdfFilesList.forEach(file => {
+        const key = file.name;
+        const deckStats = stats[key] || { rights: 0, wrongs: 0 };
+        totalRights += deckStats.rights;
+        totalWrongs += deckStats.wrongs;
+
+        const pct = calculatePercentage(deckStats.rights, deckStats.wrongs);
+        const barEl = document.getElementById(`bar-${key}`);
+        const pctEl = document.getElementById(`pct-${key}`);
+        const textEl = document.getElementById(`text-${key}`);
+
+        if (barEl && pctEl && textEl) {
+          pctEl.textContent = `${pct}%`;
+          barEl.style.width = `${pct}%`;
+          textEl.textContent = `${deckStats.rights} acertos / ${deckStats.wrongs} erros`;
+
+          if (pct >= 70) barEl.className = "h-full rounded-full transition-all duration-500 bg-emerald-500";
+          else if (pct >= 40) barEl.className = "h-full rounded-full transition-all duration-500 bg-amber-500";
+          else if (pct > 0) barEl.className = "h-full rounded-full transition-all duration-500 bg-rose-500";
+          else barEl.className = "h-full rounded-full transition-all duration-500 bg-slate-600";
+        }
+      });
+
+      const overallPct = calculatePercentage(totalRights, totalWrongs);
+      overallPercentage.textContent = `${overallPct}%`;
+      overallBar.style.width = `${overallPct}%`;
+      overallStatsText.textContent = `${totalRights} acertos / ${totalWrongs} erros totais`;
+    }
+
+    resetStatsBtn.addEventListener('click', () => {
+      if (confirm("Deseja apagar todas as estatísticas de acertos/erros acumuladas?")) {
+        localStorage.removeItem('flashcards_med_stats');
+        updateDashboardStats();
+      }
+    });
 
     /* -------------------------------------------------------------
        SISTEMA DE REPETIÇÃO ESPAÇADA (SUPERMEMO-2 MODIFICADO)
@@ -207,7 +315,7 @@
     }
 
     function isCardDue(cardData) {
-      if (!cardData || !cardData.nextReview) return true; // Card novo é devido
+      if (!cardData || !cardData.nextReview) return true;
       return cardData.nextReview <= getTodayString();
     }
 
@@ -218,6 +326,9 @@
       const cardKey = getCardKey(activeCard);
       const srsData = getSrsData();
 
+      // Regista estatística visual de acerto/erro
+      recordAnswer(activeCard.fileKey, rating > 1);
+
       let cardInfo = srsData[cardKey] || {
         interval: 0,
         factor: 2.5,
@@ -225,11 +336,9 @@
         nextReview: getTodayString()
       };
 
-      // Cálculo de Repetição Espaçada (SM-2)
       if (rating === 1) { // Errei
         cardInfo.interval = 1;
         cardInfo.factor = Math.max(1.3, cardInfo.factor - 0.2);
-        // O card volta para o final da fila de estudos da sessão atual
         cardsDeck.push(activeCard);
       } else {
         cardInfo.reviews++;
@@ -244,7 +353,6 @@
         if (rating === 2) cardInfo.factor = Math.max(1.3, cardInfo.factor - 0.15);
       }
 
-      // Agenda a próxima data
       const nextDate = new Date();
       nextDate.setDate(nextDate.getDate() + cardInfo.interval);
       cardInfo.nextReview = nextDate.toISOString().split('T')[0];
@@ -262,14 +370,15 @@
           currentCardIndex++;
           renderCurrentCard();
         } else {
-          alert("🎉 Excelente! Você concluiu todas as revisões pendentes para este bloco!");
+          const pctSessao = calculatePercentage(sessionRights, sessionWrongs);
+          alert(`🎉 Sessão Concluída!\n\nAcertos: ${sessionRights}\nErros: ${sessionWrongs}\nAproveitamento: ${pctSessao}%`);
           exibirDashboard();
         }
       }, 150);
     }
 
     resetSrsBtn.addEventListener('click', () => {
-      if (confirm("Deseja apagar todo o histórico de agendamentos e revisões? Todos os cards voltarão a ser 'novos'.")) {
+      if (confirm("Deseja apagar todo o histórico de agendamentos do SRS? Todos os cards voltarão a ser considerados 'novos'.")) {
         localStorage.removeItem('flashcards_srs_data');
         carregarBibliotecaGitHub();
       }
@@ -299,7 +408,6 @@
         for (let file of pdfFilesList) {
           const cleanName = file.name.replace(/\.pdf$/i, '').replace(/[-_]/g, ' ').toUpperCase();
           
-          // Baixa metadados do PDF para contar os cards devido
           let dueCardsCount = 0;
           let totalCardsCount = 0;
 
@@ -319,14 +427,27 @@
             <div onclick="estudarDeck('${file.download_url || file.name}', '${file.name}', '${cleanName}', false)" 
                  class="bg-slate-800 hover:bg-slate-750 border border-slate-700 hover:border-indigo-500/50 p-5 rounded-2xl cursor-pointer transition shadow-lg flex flex-col justify-between gap-4 group">
               <div>
-                <div class="flex justify-between items-start gap-2 mb-1">
+                <div class="flex justify-between items-start gap-2 mb-2">
                   <h4 class="font-bold text-slate-100 group-hover:text-indigo-400 transition">${cleanName}</h4>
                   <span class="text-xs bg-slate-900 text-slate-400 px-2 py-0.5 rounded border border-slate-700">${totalCardsCount} cards</span>
                 </div>
+
+                <!-- Gráfico do Card Individual -->
+                <div class="space-y-1.5 my-2">
+                  <div class="flex justify-between text-xs font-semibold">
+                    <span class="text-slate-400">Acertos</span>
+                    <span id="pct-${file.name}" class="text-indigo-400">0%</span>
+                  </div>
+                  <div class="w-full bg-slate-900 h-2 rounded-full overflow-hidden border border-slate-700/30">
+                    <div id="bar-${file.name}" class="bg-slate-600 h-full rounded-full transition-all duration-500" style="width: 0%"></div>
+                  </div>
+                  <div id="text-${file.name}" class="text-[10px] text-slate-500 text-right">0 acertos / 0 erros</div>
+                </div>
               </div>
 
+              <!-- Status do Agendamento SRS -->
               <div class="flex items-center justify-between text-xs pt-2 border-t border-slate-700/50">
-                <span class="text-slate-400">Pendentes hoje:</span>
+                <span class="text-slate-400">Pendente hoje:</span>
                 <span class="font-bold px-2 py-0.5 rounded ${dueCardsCount > 0 ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'}">
                   ${dueCardsCount > 0 ? `${dueCardsCount} para revisar` : '✓ Em dia'}
                 </span>
@@ -344,6 +465,8 @@
           srsSummaryText.textContent = "Parabéns! Todas as suas revisões estão em dia para hoje.";
           startDueBtn.disabled = true;
         }
+
+        updateDashboardStats();
 
       } else {
         decksGrid.innerHTML = `
@@ -365,6 +488,9 @@
     async function estudarDeck(url, key, titulo, apenasDevidos = false) {
       currentDeckTitleText = titulo;
       currentDeckTitle.textContent = titulo;
+      sessionRights = 0;
+      sessionWrongs = 0;
+      updateSessionUI();
 
       cardsDeck = [];
       const pdfDoc = await pdfjsLib.getDocument(url).promise;
@@ -374,11 +500,14 @@
       iniciarFlashcards();
     }
 
-    // Botão de Revisão do Dia (Geral)
     startDueBtn.addEventListener('click', async () => {
       if (pdfFilesList.length === 0) return;
 
       currentDeckTitle.textContent = "🔥 REVISÃO DO DIA (SRS)";
+      sessionRights = 0;
+      sessionWrongs = 0;
+      updateSessionUI();
+
       cardsDeck = [];
       startDueBtn.textContent = "Carregando...";
 
@@ -396,11 +525,14 @@
       iniciarFlashcards();
     });
 
-    // Botão Estudo Livre (Todas as Matérias)
     startRandomBtn.addEventListener('click', async () => {
       if (pdfFilesList.length === 0) return;
 
       currentDeckTitle.textContent = "🎲 ESTUDO LIVRE (TODAS AS MATÉRIAS)";
+      sessionRights = 0;
+      sessionWrongs = 0;
+      updateSessionUI();
+
       cardsDeck = [];
 
       for (let file of pdfFilesList) {
@@ -415,7 +547,6 @@
       iniciarFlashcards();
     });
 
-    // Upload Temporário
     pdfInput.addEventListener('change', async (e) => {
       const file = e.target.files[0];
       if (!file) return;
@@ -426,6 +557,9 @@
         const pdfDoc = await pdfjsLib.getDocument(typedarray).promise;
         cardsDeck = [];
         currentDeckTitle.textContent = file.name;
+        sessionRights = 0;
+        sessionWrongs = 0;
+        updateSessionUI();
 
         extrairCardsDePdf(pdfDoc, `TEMP_${file.name}`, false);
         exibirTelaEstudo();
@@ -479,6 +613,11 @@
 
     homeBtn.addEventListener('click', exibirDashboard);
 
+    function updateSessionUI() {
+      sessionRightsEl.textContent = sessionRights;
+      sessionWrongsEl.textContent = sessionWrongs;
+    }
+
     /* -------------------------------------------------------------
        RENDERIZAÇÃO DOS CARDS
     ------------------------------------------------------------- */
@@ -528,12 +667,10 @@
       ctx.clearRect(0, 0, canvas.width, canvas.height);
     }
 
-    // Virar Card no Clique
     cardInner.addEventListener('click', () => {
       cardInner.classList.toggle('flipped');
     });
 
-    // Atalhos do Teclado para os 4 níveis SRS
     document.addEventListener('keydown', (e) => {
       if (studyView.classList.contains('hidden')) return;
 
