@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Meus Flashcards de PDF</title>
+  <!-- Tailwind CSS para estilização rápida -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- PDF.js para processar arquivos PDF no navegador -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+  <style>
+    /* Estilo e animação do giro do Flashcard */
+    .perspective { perspective: 1000px; }
+    .card-inner {
+      transition: transform 0.6s;
+      transform-style: preserve-3d;
+    }
+    .card-inner.flipped { transform: rotateY(180deg); }
+    .card-front, .card-back {
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+    }
+    .card-back { transform: rotateY(180deg); }
+  </style>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col items-center justify-between p-4 font-sans">
+
+  <!-- Cabeçalho -->
+  <header class="w-full max-w-4xl flex justify-between items-center py-4 border-b border-slate-700">
+    <h1 class="text-2xl font-bold text-indigo-400">Estudo por Flashcards</h1>
+    <label class="bg-indigo-600 hover:bg-indigo-500 text-white font-medium py-2 px-4 rounded-lg cursor-pointer transition">
+      Carregar PDF
+      <input type="file" id="pdf-input" accept="application/pdf" class="hidden">
+    </label>
+  </header>
+
+  <!-- Área Principal do Card -->
+  <main class="flex-1 flex flex-col items-center justify-center my-6 w-full max-w-2xl">
+    
+    <div id="welcome-message" class="text-center text-slate-400">
+      <p class="text-lg">Selecione um arquivo PDF para começar.</p>
+      <p class="text-sm mt-2">Páginas ímpares = Pergunta | Páginas pares = Resposta</p>
+    </div>
+
+    <div id="card-container" class="w-full h-[450px] perspective hidden">
+      <div id="card-inner" class="card-inner relative w-full h-full cursor-pointer rounded-2xl shadow-2xl bg-slate-800 border border-slate-700">
+        
+        <!-- Frente (Pergunta - Páginas Ímpares) -->
+        <div class="card-front absolute inset-0 w-full h-full flex flex-col items-center justify-center p-4 rounded-2xl">
+          <span class="absolute top-3 left-4 text-xs font-semibold uppercase tracking-wider text-indigo-400">Frente (Pergunta)</span>
+          <div class="w-full h-full flex items-center justify-center overflow-hidden pt-6">
+            <canvas id="front-canvas" class="max-w-full max-h-full object-contain rounded"></canvas>
+          </div>
+        </div>
+
+        <!-- Verso (Resposta - Páginas Pares) -->
+        <div class="card-back absolute inset-0 w-full h-full flex flex-col items-center justify-center p-4 rounded-2xl">
+          <span class="absolute top-3 left-4 text-xs font-semibold uppercase tracking-wider text-emerald-400">Verso (Resposta)</span>
+          <div class="w-full h-full flex items-center justify-center overflow-hidden pt-6">
+            <canvas id="back-canvas" class="max-w-full max-h-full object-contain rounded"></canvas>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </main>
+
+  <!-- Controles de Navegação -->
+  <footer id="controls" class="w-full max-w-2xl flex flex-col items-center gap-4 mb-4 hidden">
+    <div class="flex items-center gap-6">
+      <button id="prev-btn" class="bg-slate-800 hover:bg-slate-700 text-white px-5 py-2 rounded-lg border border-slate-600 disabled:opacity-40 transition">
+        &larr; Anterior
+      </button>
+      <span id="card-counter" class="text-slate-300 font-medium">Card 1 de 1</span>
+      <button id="next-btn" class="bg-slate-800 hover:bg-slate-700 text-white px-5 py-2 rounded-lg border border-slate-600 disabled:opacity-40 transition">
+        Próximo &rarr;
+      </button>
+    </div>
+    <p class="text-xs text-slate-500">Clique no card ou aperte <kbd class="px-1 bg-slate-800 rounded border border-slate-700">Espaço</kbd> para virar. Use as setas do teclado para navegar.</p>
+  </footer>
+
+  <script>
+    // Configuração do Worker do PDF.js
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+
+    let pdfDoc = null;
+    let currentCardIndex = 0;
+    let totalCards = 0;
+
+    const pdfInput = document.getElementById('pdf-input');
+    const cardInner = document.getElementById('card-inner');
+    const cardContainer = document.getElementById('card-container');
+    const welcomeMessage = document.getElementById('welcome-message');
+    const controls = document.getElementById('controls');
+    const cardCounter = document.getElementById('card-counter');
+    const prevBtn = document.getElementById('prev-btn');
+    const nextBtn = document.getElementById('next-btn');
+
+    // Carregar o PDF selecionado
+    pdfInput.addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const fileReader = new FileReader();
+      fileReader.onload = async function() {
+        const typedarray = new Uint8Array(this.result);
+        pdfDoc = await pdfjsLib.getDocument(typedarray).promise;
+        
+        // Calcula o número total de cards (Pares de páginas)
+        totalCards = Math.ceil(pdfDoc.numPages / 2);
+        currentCardIndex = 0;
+
+        welcomeMessage.classList.add('hidden');
+        cardContainer.classList.remove('hidden');
+        controls.classList.remove('hidden');
+
+        renderCurrentCard();
+      };
+      fileReader.readAsArrayBuffer(file);
+    });
+
+    // Renderiza a frente e o verso do card atual
+    async function renderCurrentCard() {
+      cardInner.classList.remove('flipped'); // Reseta a rotação ao mudar de card
+      
+      const frontPageNum = (currentCardIndex * 2) + 1;
+      const backPageNum = (currentCardIndex * 2) + 2;
+
+      // Renderiza Frente
+      await renderPageToCanvas(frontPageNum, 'front-canvas');
+
+      // Renderiza Verso (se houver)
+      if (backPageNum <= pdfDoc.numPages) {
+        await renderPageToCanvas(backPageNum, 'back-canvas');
+      } else {
+        // Se o PDF tiver número ímpar de páginas, o verso fica em branco
+        clearCanvas('back-canvas');
+      }
+
+      // Atualiza interface
+      cardCounter.textContent = `Card ${currentCardIndex + 1} de ${totalCards}`;
+      prevBtn.disabled = currentCardIndex === 0;
+      nextBtn.disabled = currentCardIndex === totalCards - 1;
+    }
+
+    // Desenha uma página do PDF no Canvas especificado
+    async function renderPageToCanvas(pageNum, canvasId) {
+      const page = await pdfDoc.getPage(pageNum);
+      const canvas = document.getElementById(canvasId);
+      const ctx = canvas.getContext('2d');
+
+      const viewport = page.getViewport({ scale: 1.5 });
+      canvas.height = viewport.height;
+      canvas.width = viewport.width;
+
+      await page.render({ canvasContext: ctx, viewport: viewport }).promise;
+    }
+
+    function clearCanvas(canvasId) {
+      const canvas = document.getElementById(canvasId);
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+
+    // Virar o card ao clicar
+    cardInner.addEventListener('click', () => {
+      cardInner.classList.toggle('flipped');
+    });
+
+    // Eventos dos botões
+    prevBtn.addEventListener('click', () => {
+      if (currentCardIndex > 0) {
+        currentCardIndex--;
+        renderCurrentCard();
+      }
+    });
+
+    nextBtn.addEventListener('click', () => {
+      if (currentCardIndex < totalCards - 1) {
+        currentCardIndex++;
+        renderCurrentCard();
+      }
+    });
+
+    // Atalhos de teclado (Espaço, Seta Esquerda, Seta Direita)
+    document.addEventListener('keydown', (e) => {
+      if (!pdfDoc) return;
+      if (e.code === 'Space') {
+        e.preventDefault();
+        cardInner.classList.toggle('flipped');
+      } else if (e.code === 'ArrowRight') {
+        if (currentCardIndex < totalCards - 1) {
+          currentCardIndex++;
+          renderCurrentCard();
+        }
+      } else if (e.code === 'ArrowLeft') {
+        if (currentCardIndex > 0) {
+          currentCardIndex--;
+          renderCurrentCard();
+        }
+      }
+    });
+  </script>
+</body>
+</html>
