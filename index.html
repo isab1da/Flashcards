@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dashboard Flashcards Medicina</title>
+  <title>Flashcards Medicina - Repetição Espaçada</title>
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- PDF.js -->
@@ -30,7 +30,7 @@
       cursor: grabbing;
     }
     .card-swiping {
-      transition: transform 0.1s ease-out, opacity 0.1s ease-out;
+      transition: transform 0.15s ease-out, opacity 0.15s ease-out;
     }
     .card-reset {
       transition: transform 0.3s ease-out, opacity 0.3s ease-out;
@@ -56,47 +56,39 @@
     </div>
   </header>
 
-  <!-- TELA 1: DASHBOARD DE DECKS E ESTATÍSTICAS (TELA INICIAL) -->
+  <!-- TELA 1: DASHBOARD / PAINEL PRINCIPAL -->
   <main id="dashboard-view" class="w-full max-w-5xl my-6 flex flex-col gap-6">
     
-    <!-- Métrica Geral / Deck Aleatório -->
+    <!-- Painel de Revisão Espaçada do Dia -->
     <section class="bg-slate-800/80 border border-slate-700/80 rounded-2xl p-6 shadow-xl">
-      <div class="flex flex-col md:flex-row justify-between md:items-center gap-4 mb-4">
+      <div class="flex flex-col md:flex-row justify-between md:items-center gap-4">
         <div>
           <h2 class="text-xl font-bold text-slate-100 flex items-center gap-2">
-            <span>🎲</span> Geral / Deck Aleatório
+            <span>🧠</span> Repetição Espaçada (SRS)
           </h2>
-          <p class="text-xs text-slate-400 mt-1">Aproveitamento acumulado de todas as matérias estudadas</p>
+          <p id="srs-summary-text" class="text-xs text-slate-400 mt-1">Calculando cards pendentes para hoje...</p>
         </div>
-        <button id="start-random-btn" class="bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-2.5 px-5 rounded-xl transition shadow-lg shadow-indigo-600/30 flex items-center justify-center gap-2">
-          ⚡ Estudar Tudo Aleatório
-        </button>
-      </div>
-
-      <!-- Barra de Progresso Geral -->
-      <div class="space-y-2">
-        <div class="flex justify-between text-sm font-medium">
-          <span class="text-slate-300">Taxa de Acerto Geral</span>
-          <span id="overall-percentage" class="text-indigo-400 font-bold">0%</span>
-        </div>
-        <div class="w-full bg-slate-900 h-3.5 rounded-full overflow-hidden border border-slate-700/50">
-          <div id="overall-bar" class="bg-indigo-500 h-full rounded-full transition-all duration-500" style="width: 0%"></div>
-        </div>
-        <div class="flex justify-between text-xs text-slate-500 pt-1">
-          <span id="overall-stats-text">0 acertos / 0 erros</span>
-          <button id="reset-stats-btn" class="text-slate-500 hover:text-rose-400 underline transition">Zerar Estatísticas</button>
+        <div class="flex flex-wrap gap-2">
+          <button id="start-due-btn" class="bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-2.5 px-5 rounded-xl transition shadow-lg shadow-emerald-600/30 flex items-center justify-center gap-2 disabled:opacity-50">
+            🔥 Revisar Cards de Hoje (<span id="due-count">0</span>)
+          </button>
+          <button id="start-random-btn" class="bg-slate-700 hover:bg-slate-600 text-slate-200 font-semibold py-2.5 px-4 rounded-xl transition flex items-center justify-center gap-2">
+            🎲 Estudo Livre (Tudo)
+          </button>
         </div>
       </div>
     </section>
 
     <!-- Grade de Matérias Cadastradas -->
     <section>
-      <h3 class="text-lg font-bold text-slate-300 mb-4 flex items-center gap-2">
-        <span>📚</span> Minhas Matérias
-      </h3>
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="text-lg font-bold text-slate-300 flex items-center gap-2">
+          <span>📚</span> Minhas Matérias
+        </h3>
+        <button id="reset-srs-btn" class="text-xs text-slate-500 hover:text-rose-400 underline transition">Zerar Histórico de Revisões</button>
+      </div>
 
       <div id="decks-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        <!-- Os cartões de cada matéria serão gerados dinamicamente via JS -->
         <div class="col-span-full text-center py-10 text-slate-500">
           Carregando biblioteca de matérias do GitHub...
         </div>
@@ -107,25 +99,14 @@
   <!-- TELA 2: ÁREA DE ESTUDO DOS FLASHCARDS -->
   <main id="study-view" class="flex-1 flex flex-col items-center justify-center my-4 w-full max-w-2xl relative hidden">
     
-    <!-- Status da Sessão Atual -->
+    <!-- Header da Sessão -->
     <div class="w-full flex justify-between items-center mb-2 px-2 text-xs text-slate-400">
       <span id="current-deck-title" class="font-bold text-indigo-400 uppercase tracking-wider">Matéria</span>
-      <div class="flex gap-3 font-semibold">
-        <span class="text-emerald-400">✓ <span id="session-rights">0</span></span>
-        <span class="text-rose-400">✗ <span id="session-wrongs">0</span></span>
-      </div>
-    </div>
-
-    <!-- Indicadores de Ação (Swipe) -->
-    <div id="swipe-overlay-right" class="hidden absolute top-10 right-4 z-20 bg-emerald-500 text-white font-bold px-4 py-2 rounded-xl shadow-lg transform rotate-12">
-      ACERTOU! ✓
-    </div>
-    <div id="swipe-overlay-left" class="hidden absolute top-10 left-4 z-20 bg-rose-500 text-white font-bold px-4 py-2 rounded-xl shadow-lg transform -rotate-12">
-      ERROU! ✗
+      <span id="card-counter" class="text-slate-300 font-medium">Card 1 de 1</span>
     </div>
 
     <!-- Container do Flashcard -->
-    <div id="card-container" class="w-full h-[450px] perspective relative">
+    <div id="card-container" class="w-full h-[430px] perspective relative">
       <div id="card-inner" class="card-inner draggable-card relative w-full h-full rounded-2xl shadow-2xl bg-slate-800 border border-slate-700">
         
         <!-- Frente -->
@@ -134,6 +115,7 @@
           <div class="w-full h-full flex items-center justify-center overflow-hidden pt-6 pointer-events-none">
             <canvas id="front-canvas" class="max-w-full max-h-full object-contain rounded"></canvas>
           </div>
+          <p class="absolute bottom-3 text-xs text-slate-500">Clique para ver a resposta</p>
         </div>
 
         <!-- Verso -->
@@ -148,20 +130,28 @@
     </div>
   </main>
 
-  <!-- CONTROLES DA SESSÃO DE ESTUDO -->
-  <footer id="study-controls" class="w-full max-w-2xl flex flex-col items-center gap-4 mb-4 hidden">
-    <div class="flex items-center gap-4">
-      <button id="fail-btn" class="bg-rose-900/40 hover:bg-rose-800/60 text-rose-300 border border-rose-700/50 px-4 py-2 rounded-lg font-medium transition flex items-center gap-2">
-        <span>←</span> Errei (Esquerda)
+  <!-- CONTROLES SRS (4 BOTÕES NO VERSO) -->
+  <footer id="study-controls" class="w-full max-w-2xl flex flex-col items-center gap-3 mb-4 hidden">
+    <div id="srs-buttons" class="w-full grid grid-cols-4 gap-2">
+      <button onclick="responderSRS(1)" class="bg-rose-900/40 hover:bg-rose-800/70 border border-rose-700/50 text-rose-200 py-3 rounded-xl flex flex-col items-center transition">
+        <span class="font-bold text-sm">Errei</span>
+        <span class="text-[10px] opacity-75">1 dia</span>
       </button>
-      <span id="card-counter" class="text-slate-300 font-medium px-2">Card 1 de 1</span>
-      <button id="success-btn" class="bg-emerald-900/40 hover:bg-emerald-800/60 text-emerald-300 border border-emerald-700/50 px-4 py-2 rounded-lg font-medium transition flex items-center gap-2">
-        Acertei (Direita) <span>→</span>
+      <button onclick="responderSRS(2)" class="bg-amber-900/40 hover:bg-amber-800/70 border border-amber-700/50 text-amber-200 py-3 rounded-xl flex flex-col items-center transition">
+        <span class="font-bold text-sm">Difícil</span>
+        <span id="hard-label" class="text-[10px] opacity-75">x1.2</span>
+      </button>
+      <button onclick="responderSRS(3)" class="bg-emerald-900/40 hover:bg-emerald-800/70 border border-emerald-700/50 text-emerald-200 py-3 rounded-xl flex flex-col items-center transition">
+        <span class="font-bold text-sm">Bom</span>
+        <span id="good-label" class="text-[10px] opacity-75">x2.5</span>
+      </button>
+      <button onclick="responderSRS(4)" class="bg-sky-900/40 hover:bg-sky-800/70 border border-sky-700/50 text-sky-200 py-3 rounded-xl flex flex-col items-center transition">
+        <span class="font-bold text-sm">Fácil</span>
+        <span id="easy-label" class="text-[10px] opacity-75">x3.5</span>
       </button>
     </div>
     <p class="text-xs text-slate-500 text-center">
-      Clique/Toque no card para virar.<br>
-      Arraste para os lados ou use as setas do teclado (<kbd class="px-1 bg-slate-800 rounded">←</kbd> Errou / <kbd class="px-1 bg-slate-800 rounded">→</kbd> Acertou).
+      Atalhos no teclado: <kbd class="px-1 bg-slate-800 rounded">1</kbd> Errei | <kbd class="px-1 bg-slate-800 rounded">2</kbd> Difícil | <kbd class="px-1 bg-slate-800 rounded">3</kbd> Bom | <kbd class="px-1 bg-slate-800 rounded">4</kbd> Fácil
     </p>
   </footer>
 
@@ -172,33 +162,24 @@
     let pdfFilesList = [];
     let cardsDeck = [];
     let currentCardIndex = 0;
-    let currentDeckKey = "";
-    let sessionRights = 0;
-    let sessionWrongs = 0;
+    let currentDeckTitleText = "";
 
-    // Elementos do DOM
+    // Elementos DOM
     const dashboardView = document.getElementById('dashboard-view');
     const studyView = document.getElementById('study-view');
     const studyControls = document.getElementById('study-controls');
     const homeBtn = document.getElementById('home-btn');
     const decksGrid = document.getElementById('decks-grid');
+    const startDueBtn = document.getElementById('start-due-btn');
+    const dueCountEl = document.getElementById('due-count');
     const startRandomBtn = document.getElementById('start-random-btn');
+    const srsSummaryText = document.getElementById('srs-summary-text');
+    const resetSrsBtn = document.getElementById('reset-srs-btn');
     const pdfInput = document.getElementById('pdf-input');
-    
-    const overallPercentage = document.getElementById('overall-percentage');
-    const overallBar = document.getElementById('overall-bar');
-    const overallStatsText = document.getElementById('overall-stats-text');
-    const resetStatsBtn = document.getElementById('reset-stats-btn');
 
     const cardInner = document.getElementById('card-inner');
     const cardCounter = document.getElementById('card-counter');
     const currentDeckTitle = document.getElementById('current-deck-title');
-    const sessionRightsEl = document.getElementById('session-rights');
-    const sessionWrongsEl = document.getElementById('session-wrongs');
-    const failBtn = document.getElementById('fail-btn');
-    const successBtn = document.getElementById('success-btn');
-    const overlayRight = document.getElementById('swipe-overlay-right');
-    const overlayLeft = document.getElementById('swipe-overlay-left');
 
     // Identificação do GitHub
     const pathSegments = window.location.pathname.split('/').filter(Boolean);
@@ -206,89 +187,101 @@
     const repoName = pathSegments[0] || '';
 
     /* -------------------------------------------------------------
-       GERENCIAMENTO DE LOCALSTORAGE (ESTATÍSTICAS)
+       SISTEMA DE REPETIÇÃO ESPAÇADA (SUPERMEMO-2 MODIFICADO)
     ------------------------------------------------------------- */
-    function getStats() {
-      const stats = localStorage.getItem('flashcards_med_stats');
-      return stats ? JSON.parse(stats) : {};
+    function getSrsData() {
+      const data = localStorage.getItem('flashcards_srs_data');
+      return data ? JSON.parse(data) : {};
     }
 
-    function saveStats(stats) {
-      localStorage.setItem('flashcards_med_stats', JSON.stringify(stats));
+    function saveSrsData(data) {
+      localStorage.setItem('flashcards_srs_data', JSON.stringify(data));
     }
 
-    function recordAnswer(deckKey, isRight) {
-      const stats = getStats();
-      if (!stats[deckKey]) {
-        stats[deckKey] = { rights: 0, wrongs: 0 };
-      }
-      if (isRight) {
-        stats[deckKey].rights++;
-        sessionRights++;
+    function getTodayString() {
+      return new Date().toISOString().split('T')[0];
+    }
+
+    function getCardKey(card) {
+      return `${card.fileKey}_card_${card.frontPageNum}`;
+    }
+
+    function isCardDue(cardData) {
+      if (!cardData || !cardData.nextReview) return true; // Card novo é devido
+      return cardData.nextReview <= getTodayString();
+    }
+
+    function responderSRS(rating) {
+      if (cardsDeck.length === 0) return;
+
+      const activeCard = cardsDeck[currentCardIndex];
+      const cardKey = getCardKey(activeCard);
+      const srsData = getSrsData();
+
+      let cardInfo = srsData[cardKey] || {
+        interval: 0,
+        factor: 2.5,
+        reviews: 0,
+        nextReview: getTodayString()
+      };
+
+      // Cálculo de Repetição Espaçada (SM-2)
+      if (rating === 1) { // Errei
+        cardInfo.interval = 1;
+        cardInfo.factor = Math.max(1.3, cardInfo.factor - 0.2);
+        // O card volta para o final da fila de estudos da sessão atual
+        cardsDeck.push(activeCard);
       } else {
-        stats[deckKey].wrongs++;
-        sessionWrongs++;
-      }
-      saveStats(stats);
-      updateSessionUI();
-    }
-
-    function calculatePercentage(rights, wrongs) {
-      const total = rights + wrongs;
-      if (total === 0) return 0;
-      return Math.round((rights / total) * 100);
-    }
-
-    function updateDashboardUI() {
-      const stats = getStats();
-      let totalRights = 0;
-      let totalWrongs = 0;
-
-      // Atualiza estáticas de cada deck
-      pdfFilesList.forEach(file => {
-        const key = file.name;
-        const deckStats = stats[key] || { rights: 0, wrongs: 0 };
-        totalRights += deckStats.rights;
-        totalWrongs += deckStats.wrongs;
-
-        const pct = calculatePercentage(deckStats.rights, deckStats.wrongs);
-        const barEl = document.getElementById(`bar-${key}`);
-        const pctEl = document.getElementById(`pct-${key}`);
-        const textEl = document.getElementById(`text-${key}`);
-
-        if (barEl && pctEl && textEl) {
-          pctEl.textContent = `${pct}%`;
-          barEl.style.width = `${pct}%`;
-          textEl.textContent = `${deckStats.rights} acertos / ${deckStats.wrongs} erros`;
-
-          // Cor dinâmica da barra
-          if (pct >= 70) barEl.className = "h-full rounded-full transition-all duration-500 bg-emerald-500";
-          else if (pct >= 40) barEl.className = "h-full rounded-full transition-all duration-500 bg-amber-500";
-          else if (pct > 0) barEl.className = "h-full rounded-full transition-all duration-500 bg-rose-500";
-          else barEl.className = "h-full rounded-full transition-all duration-500 bg-slate-600";
+        cardInfo.reviews++;
+        if (cardInfo.reviews === 1) {
+          cardInfo.interval = rating === 2 ? 1 : rating === 3 ? 3 : 6;
+        } else {
+          const mult = rating === 2 ? 1.2 : rating === 3 ? cardInfo.factor : cardInfo.factor * 1.3;
+          cardInfo.interval = Math.round(cardInfo.interval * mult);
         }
-      });
 
-      // Atualiza Estatística Geral
-      const overallPct = calculatePercentage(totalRights, totalWrongs);
-      overallPercentage.textContent = `${overallPct}%`;
-      overallBar.style.width = `${overallPct}%`;
-      overallStatsText.textContent = `${totalRights} acertos / ${totalWrongs} erros totais`;
+        if (rating === 4) cardInfo.factor += 0.15;
+        if (rating === 2) cardInfo.factor = Math.max(1.3, cardInfo.factor - 0.15);
+      }
+
+      // Agenda a próxima data
+      const nextDate = new Date();
+      nextDate.setDate(nextDate.getDate() + cardInfo.interval);
+      cardInfo.nextReview = nextDate.toISOString().split('T')[0];
+
+      srsData[cardKey] = cardInfo;
+      saveSrsData(srsData);
+
+      // Animação de saída
+      cardInner.classList.add('card-swiping');
+      cardInner.style.transform = rating === 1 ? 'translateX(-400px) rotate(-20deg)' : 'translateX(400px) rotate(20deg)';
+      cardInner.style.opacity = '0';
+
+      setTimeout(() => {
+        if (currentCardIndex < cardsDeck.length - 1) {
+          currentCardIndex++;
+          renderCurrentCard();
+        } else {
+          alert("🎉 Excelente! Você concluiu todas as revisões pendentes para este bloco!");
+          exibirDashboard();
+        }
+      }, 150);
     }
 
-    resetStatsBtn.addEventListener('click', () => {
-      if (confirm("Deseja apagar todas as estatísticas de acertos/erros acumuladas?")) {
-        localStorage.removeItem('flashcards_med_stats');
-        updateDashboardUI();
+    resetSrsBtn.addEventListener('click', () => {
+      if (confirm("Deseja apagar todo o histórico de agendamentos e revisões? Todos os cards voltarão a ser 'novos'.")) {
+        localStorage.removeItem('flashcards_srs_data');
+        carregarBibliotecaGitHub();
       }
     });
 
     /* -------------------------------------------------------------
-       CARREGAMENTO DA BIBLIOTECA
+       CARREGAMENTO E MONTAGEM DA BIBLIOTECA
     ------------------------------------------------------------- */
     async function carregarBibliotecaGitHub() {
       pdfFilesList = [];
       decksGrid.innerHTML = '';
+      let totalDueGlobal = 0;
 
       if (githubUser && repoName) {
         try {
@@ -301,35 +294,57 @@
       }
 
       if (pdfFilesList.length > 0) {
-        pdfFilesList.forEach(file => {
+        const srsData = getSrsData();
+
+        for (let file of pdfFilesList) {
           const cleanName = file.name.replace(/\.pdf$/i, '').replace(/[-_]/g, ' ').toUpperCase();
           
+          // Baixa metadados do PDF para contar os cards devido
+          let dueCardsCount = 0;
+          let totalCardsCount = 0;
+
+          try {
+            const pdfDoc = await pdfjsLib.getDocument(file.download_url || file.name).promise;
+            totalCardsCount = Math.ceil(pdfDoc.numPages / 2);
+
+            for (let i = 0; i < totalCardsCount; i++) {
+              const k = `${file.name}_card_${(i * 2) + 1}`;
+              if (isCardDue(srsData[k])) dueCardsCount++;
+            }
+          } catch(err) {}
+
+          totalDueGlobal += dueCardsCount;
+
           const cardHtml = `
-            <div onclick="estudarDeck('${file.download_url || file.name}', '${file.name}', '${cleanName}')" 
-                 class="bg-slate-800 hover:bg-slate-750 border border-slate-700/80 hover:border-indigo-500/50 p-5 rounded-2xl cursor-pointer transition shadow-lg flex flex-col justify-between gap-4 group">
+            <div onclick="estudarDeck('${file.download_url || file.name}', '${file.name}', '${cleanName}', false)" 
+                 class="bg-slate-800 hover:bg-slate-750 border border-slate-700 hover:border-indigo-500/50 p-5 rounded-2xl cursor-pointer transition shadow-lg flex flex-col justify-between gap-4 group">
               <div>
-                <div class="flex justify-between items-start gap-2 mb-2">
+                <div class="flex justify-between items-start gap-2 mb-1">
                   <h4 class="font-bold text-slate-100 group-hover:text-indigo-400 transition">${cleanName}</h4>
-                  <span class="text-xs bg-slate-900 text-slate-400 px-2 py-1 rounded border border-slate-700">PDF</span>
+                  <span class="text-xs bg-slate-900 text-slate-400 px-2 py-0.5 rounded border border-slate-700">${totalCardsCount} cards</span>
                 </div>
               </div>
 
-              <div class="space-y-1.5">
-                <div class="flex justify-between text-xs font-semibold">
-                  <span class="text-slate-400">Aproveitamento</span>
-                  <span id="pct-${file.name}" class="text-indigo-400">0%</span>
-                </div>
-                <div class="w-full bg-slate-900 h-2 rounded-full overflow-hidden border border-slate-700/30">
-                  <div id="bar-${file.name}" class="bg-slate-600 h-full rounded-full transition-all duration-500" style="width: 0%"></div>
-                </div>
-                <div id="text-${file.name}" class="text-[10px] text-slate-500 text-right">0 acertos / 0 erros</div>
+              <div class="flex items-center justify-between text-xs pt-2 border-t border-slate-700/50">
+                <span class="text-slate-400">Pendentes hoje:</span>
+                <span class="font-bold px-2 py-0.5 rounded ${dueCardsCount > 0 ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'}">
+                  ${dueCardsCount > 0 ? `${dueCardsCount} para revisar` : '✓ Em dia'}
+                </span>
               </div>
             </div>
           `;
           decksGrid.innerHTML += cardHtml;
-        });
+        }
 
-        updateDashboardUI();
+        dueCountEl.textContent = totalDueGlobal;
+        if (totalDueGlobal > 0) {
+          srsSummaryText.textContent = `Você tem ${totalDueGlobal} cards aguardando revisão hoje.`;
+          startDueBtn.disabled = false;
+        } else {
+          srsSummaryText.textContent = "Parabéns! Todas as suas revisões estão em dia para hoje.";
+          startDueBtn.disabled = true;
+        }
+
       } else {
         decksGrid.innerHTML = `
           <div class="col-span-full text-center py-10 bg-slate-800/40 rounded-2xl border border-slate-800">
@@ -337,56 +352,70 @@
             <p class="text-xs text-slate-500 mt-1">Envie seus PDFs diretamente para o GitHub para preencher este painel.</p>
           </div>
         `;
+        srsSummaryText.textContent = "Nenhuma matéria encontrada.";
+        startDueBtn.disabled = true;
       }
     }
 
     carregarBibliotecaGitHub();
 
     /* -------------------------------------------------------------
-       INICIAR SESSÃO DE ESTUDO
+       INICIAR SESSÕES DE ESTUDO
     ------------------------------------------------------------- */
-    async function estudarDeck(url, key, titulo) {
-      currentDeckKey = key;
+    async function estudarDeck(url, key, titulo, apenasDevidos = false) {
+      currentDeckTitleText = titulo;
       currentDeckTitle.textContent = titulo;
-      sessionRights = 0;
-      sessionWrongs = 0;
-      updateSessionUI();
 
       cardsDeck = [];
       const pdfDoc = await pdfjsLib.getDocument(url).promise;
-      extrairCardsDePdf(pdfDoc);
+      extrairCardsDePdf(pdfDoc, key, apenasDevidos);
 
       exibirTelaEstudo();
       iniciarFlashcards();
     }
 
-    startRandomBtn.addEventListener('click', async () => {
-      if (pdfFilesList.length === 0) return alert("Nenhuma matéria cadastrada.");
+    // Botão de Revisão do Dia (Geral)
+    startDueBtn.addEventListener('click', async () => {
+      if (pdfFilesList.length === 0) return;
 
-      currentDeckKey = "DECK_ALEATORIO";
-      currentDeckTitle.textContent = "🎲 TODAS AS MATÉRIAS (ALEATÓRIO)";
-      sessionRights = 0;
-      sessionWrongs = 0;
-      updateSessionUI();
-
+      currentDeckTitle.textContent = "🔥 REVISÃO DO DIA (SRS)";
       cardsDeck = [];
-      startRandomBtn.textContent = "Carregando...";
+      startDueBtn.textContent = "Carregando...";
 
       for (let file of pdfFilesList) {
         try {
           const pdfDoc = await pdfjsLib.getDocument(file.download_url || file.name).promise;
-          extrairCardsDePdf(pdfDoc, file.name);
+          extrairCardsDePdf(pdfDoc, file.name, true);
         } catch(e) {}
       }
 
-      startRandomBtn.textContent = "⚡ Estudar Tudo Aleatório";
+      startDueBtn.innerHTML = `🔥 Revisar Cards de Hoje (<span id="due-count">${dueCountEl.textContent}</span>)`;
       embaralharArray(cardsDeck);
 
       exibirTelaEstudo();
       iniciarFlashcards();
     });
 
-    // Upload de PDF Temporário
+    // Botão Estudo Livre (Todas as Matérias)
+    startRandomBtn.addEventListener('click', async () => {
+      if (pdfFilesList.length === 0) return;
+
+      currentDeckTitle.textContent = "🎲 ESTUDO LIVRE (TODAS AS MATÉRIAS)";
+      cardsDeck = [];
+
+      for (let file of pdfFilesList) {
+        try {
+          const pdfDoc = await pdfjsLib.getDocument(file.download_url || file.name).promise;
+          extrairCardsDePdf(pdfDoc, file.name, false);
+        } catch(e) {}
+      }
+
+      embaralharArray(cardsDeck);
+      exibirTelaEstudo();
+      iniciarFlashcards();
+    });
+
+    // Upload Temporário
     pdfInput.addEventListener('change', async (e) => {
       const file = e.target.files[0];
       if (!file) return;
@@ -396,30 +425,33 @@
         const typedarray = new Uint8Array(this.result);
         const pdfDoc = await pdfjsLib.getDocument(typedarray).promise;
         cardsDeck = [];
-        currentDeckKey = `TEMP_${file.name}`;
         currentDeckTitle.textContent = file.name;
-        sessionRights = 0;
-        sessionWrongs = 0;
-        updateSessionUI();
 
-        extrairCardsDePdf(pdfDoc, currentDeckKey);
+        extrairCardsDePdf(pdfDoc, `TEMP_${file.name}`, false);
         exibirTelaEstudo();
         iniciarFlashcards();
       };
       fileReader.readAsArrayBuffer(file);
     });
 
-    function extrairCardsDePdf(pdfDoc, fileKey = currentDeckKey) {
+    function extrairCardsDePdf(pdfDoc, fileKey, apenasDevidos) {
       const totalPages = pdfDoc.numPages;
       const numCards = Math.ceil(totalPages / 2);
+      const srsData = getSrsData();
 
       for (let i = 0; i < numCards; i++) {
-        cardsDeck.push({
+        const frontPageNum = (i * 2) + 1;
+        const cardObj = {
           pdfDoc: pdfDoc,
           fileKey: fileKey,
-          frontPageNum: (i * 2) + 1,
+          frontPageNum: frontPageNum,
           backPageNum: (i * 2) + 2 <= totalPages ? (i * 2) + 2 : null
-        });
+        };
+
+        const cardKey = getCardKey(cardObj);
+        if (!apenasDevidos || isCardDue(srsData[cardKey])) {
+          cardsDeck.push(cardObj);
+        }
       }
     }
 
@@ -442,22 +474,17 @@
       studyControls.classList.add('hidden');
       homeBtn.classList.add('hidden');
       dashboardView.classList.remove('hidden');
-      updateDashboardUI();
+      carregarBibliotecaGitHub();
     }
 
     homeBtn.addEventListener('click', exibirDashboard);
 
-    function updateSessionUI() {
-      sessionRightsEl.textContent = sessionRights;
-      sessionWrongsEl.textContent = sessionWrongs;
-    }
-
     /* -------------------------------------------------------------
-       RENDERIZAÇÃO E NAVEGAÇÃO DOS FLASHCARDS
+       RENDERIZAÇÃO DOS CARDS
     ------------------------------------------------------------- */
     function iniciarFlashcards() {
       if (cardsDeck.length === 0) {
-        alert("Nenhum card encontrado.");
+        alert("Não há cards pendentes para esta opção!");
         exibirDashboard();
         return;
       }
@@ -469,8 +496,6 @@
       cardInner.classList.remove('flipped');
       cardInner.style.transform = '';
       cardInner.style.opacity = '1';
-      overlayRight.classList.add('hidden');
-      overlayLeft.classList.add('hidden');
 
       const currentCard = cardsDeck[currentCardIndex];
 
@@ -503,119 +528,22 @@
       ctx.clearRect(0, 0, canvas.width, canvas.height);
     }
 
-    /* -------------------------------------------------------------
-       GESTOS DE ARRASTAR (SWIPE) E BOTÕES
-    ------------------------------------------------------------- */
-    let startX = 0;
-    let currentX = 0;
-    let isDragging = false;
-    let isFlipped = false;
-
+    // Virar Card no Clique
     cardInner.addEventListener('click', () => {
-      if (Math.abs(currentX - startX) < 10) {
-        cardInner.classList.toggle('flipped');
-        isFlipped = cardInner.classList.contains('flipped');
-      }
+      cardInner.classList.toggle('flipped');
     });
 
-    function onStart(e) {
-      isDragging = true;
-      startX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
-      currentX = startX;
-      cardInner.classList.remove('card-reset');
-    }
-
-    function onMove(e) {
-      if (!isDragging) return;
-      currentX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
-      const deltaX = currentX - startX;
-      const rotateDeg = deltaX * 0.05;
-
-      const baseRotation = isFlipped ? 'rotateY(180deg)' : '';
-      cardInner.style.transform = `translateX(${deltaX}px) rotate(${rotateDeg}deg) ${baseRotation}`;
-
-      if (deltaX > 50) {
-        overlayRight.classList.remove('hidden');
-        overlayLeft.classList.add('hidden');
-      } else if (deltaX < -50) {
-        overlayLeft.classList.remove('hidden');
-        overlayRight.classList.add('hidden');
-      } else {
-        overlayRight.classList.add('hidden');
-        overlayLeft.classList.add('hidden');
-      }
-    }
-
-    function onEnd() {
-      if (!isDragging) return;
-      isDragging = false;
-      const deltaX = currentX - startX;
-      const threshold = 100;
-
-      if (deltaX > threshold) {
-        processarResposta(true);
-      } else if (deltaX < -threshold) {
-        processarResposta(false);
-      } else {
-        cardInner.classList.add('card-reset');
-        const baseRotation = isFlipped ? 'rotateY(180deg)' : '';
-        cardInner.style.transform = baseRotation;
-        overlayRight.classList.add('hidden');
-        overlayLeft.classList.add('hidden');
-      }
-    }
-
-    cardInner.addEventListener('mousedown', onStart);
-    document.addEventListener('mousemove', onMove);
-    document.addEventListener('mouseup', onEnd);
-
-    cardInner.addEventListener('touchstart', onStart, { passive: true });
-    document.addEventListener('touchmove', onMove, { passive: true });
-    document.addEventListener('touchend', onEnd);
-
-    failBtn.addEventListener('click', () => processarResposta(false));
-    successBtn.addEventListener('click', () => processarResposta(true));
-
-    function processarResposta(acertou) {
-      // Regista estatística da matéria específica deste card
-      const activeCard = cardsDeck[currentCardIndex];
-      recordAnswer(activeCard.fileKey || currentDeckKey, acertou);
-
-      cardInner.classList.add('card-swiping');
-      const baseRotation = isFlipped ? 'rotateY(180deg)' : '';
-      
-      if (acertou) {
-        cardInner.style.transform = `translateX(500px) rotate(30deg) ${baseRotation}`;
-      } else {
-        cardInner.style.transform = `translateX(-500px) rotate(-30deg) ${baseRotation}`;
-      }
-      cardInner.style.opacity = '0';
-
-      setTimeout(() => {
-        isFlipped = false;
-        if (currentCardIndex < cardsDeck.length - 1) {
-          currentCardIndex++;
-          renderCurrentCard();
-        } else {
-          const pctSessao = calculatePercentage(sessionRights, sessionWrongs);
-          alert(`Sessão concluída!\n\nAcertos: ${sessionRights}\nErros: ${sessionWrongs}\nAproveitamento: ${pctSessao}%`);
-          exibirDashboard();
-        }
-      }, 200);
-    }
-
+    // Atalhos do Teclado para os 4 níveis SRS
     document.addEventListener('keydown', (e) => {
       if (studyView.classList.contains('hidden')) return;
 
       if (e.code === 'Space') {
         e.preventDefault();
         cardInner.classList.toggle('flipped');
-        isFlipped = cardInner.classList.contains('flipped');
-      } else if (e.code === 'ArrowRight') {
-        processarResposta(true);
-      } else if (e.code === 'ArrowLeft') {
-        processarResposta(false);
-      }
+      } else if (e.key === '1') responderSRS(1);
+      else if (e.key === '2') responderSRS(2);
+      else if (e.key === '3') responderSRS(3);
+      else if (e.key === '4') responderSRS(4);
     });
   </script>
 </body>
