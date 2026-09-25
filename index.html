@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Minha Biblioteca de Flashcards</title>
+  <title>Dashboard Flashcards Medicina</title>
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- PDF.js -->
@@ -21,7 +21,6 @@
     }
     .card-back { transform: rotateY(180deg); }
 
-    /* Animação suave para o movimento de arrastar */
     .draggable-card {
       touch-action: none;
       user-select: none;
@@ -40,43 +39,96 @@
 </head>
 <body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col items-center justify-between p-4 font-sans">
 
-  <!-- Cabeçalho com Seleção de PDFs -->
-  <header class="w-full max-w-4xl flex flex-col sm:flex-row justify-between items-center gap-4 py-4 border-b border-slate-700">
-    <h1 class="text-2xl font-bold text-indigo-400">Flashcards Medicina</h1>
-    
-    <div class="flex flex-wrap items-center gap-3">
-      <!-- Menu de Seleção -->
-      <select id="pdf-select" class="bg-slate-800 text-slate-200 border border-slate-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-indigo-500">
-        <option value="">-- Carregando Biblioteca... --</option>
-      </select>
+  <!-- CABEÇALHO -->
+  <header class="w-full max-w-5xl flex justify-between items-center py-4 border-b border-slate-800">
+    <div class="flex items-center gap-3">
+      <button id="home-btn" class="hidden bg-slate-800 hover:bg-slate-700 text-slate-200 p-2 rounded-lg border border-slate-700 transition" title="Voltar ao Painel">
+        🏠 Início
+      </button>
+      <h1 class="text-2xl font-bold text-indigo-400">Flashcards Medicina</h1>
+    </div>
 
+    <div class="flex items-center gap-3">
       <label class="bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium py-2 px-3 rounded-lg cursor-pointer transition">
-        + Enviar Outro
+        + PDF Temporário
         <input type="file" id="pdf-input" accept="application/pdf" class="hidden">
       </label>
     </div>
   </header>
 
-  <!-- Área Principal -->
-  <main class="flex-1 flex flex-col items-center justify-center my-6 w-full max-w-2xl relative">
+  <!-- TELA 1: DASHBOARD DE DECKS E ESTATÍSTICAS (TELA INICIAL) -->
+  <main id="dashboard-view" class="w-full max-w-5xl my-6 flex flex-col gap-6">
     
-    <div id="welcome-message" class="text-center text-slate-400">
-      <p class="text-lg">Selecione uma matéria ou jogue o Deck Aleatório.</p>
-      <p class="text-sm mt-2">Arraste para a <strong>direita</strong> se acertou ou para a <strong>esquerda</strong> se errou!</p>
+    <!-- Métrica Geral / Deck Aleatório -->
+    <section class="bg-slate-800/80 border border-slate-700/80 rounded-2xl p-6 shadow-xl">
+      <div class="flex flex-col md:flex-row justify-between md:items-center gap-4 mb-4">
+        <div>
+          <h2 class="text-xl font-bold text-slate-100 flex items-center gap-2">
+            <span>🎲</span> Geral / Deck Aleatório
+          </h2>
+          <p class="text-xs text-slate-400 mt-1">Aproveitamento acumulado de todas as matérias estudadas</p>
+        </div>
+        <button id="start-random-btn" class="bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-2.5 px-5 rounded-xl transition shadow-lg shadow-indigo-600/30 flex items-center justify-center gap-2">
+          ⚡ Estudar Tudo Aleatório
+        </button>
+      </div>
+
+      <!-- Barra de Progresso Geral -->
+      <div class="space-y-2">
+        <div class="flex justify-between text-sm font-medium">
+          <span class="text-slate-300">Taxa de Acerto Geral</span>
+          <span id="overall-percentage" class="text-indigo-400 font-bold">0%</span>
+        </div>
+        <div class="w-full bg-slate-900 h-3.5 rounded-full overflow-hidden border border-slate-700/50">
+          <div id="overall-bar" class="bg-indigo-500 h-full rounded-full transition-all duration-500" style="width: 0%"></div>
+        </div>
+        <div class="flex justify-between text-xs text-slate-500 pt-1">
+          <span id="overall-stats-text">0 acertos / 0 erros</span>
+          <button id="reset-stats-btn" class="text-slate-500 hover:text-rose-400 underline transition">Zerar Estatísticas</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Grade de Matérias Cadastradas -->
+    <section>
+      <h3 class="text-lg font-bold text-slate-300 mb-4 flex items-center gap-2">
+        <span>📚</span> Minhas Matérias
+      </h3>
+
+      <div id="decks-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <!-- Os cartões de cada matéria serão gerados dinamicamente via JS -->
+        <div class="col-span-full text-center py-10 text-slate-500">
+          Carregando biblioteca de matérias do GitHub...
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- TELA 2: ÁREA DE ESTUDO DOS FLASHCARDS -->
+  <main id="study-view" class="flex-1 flex flex-col items-center justify-center my-4 w-full max-w-2xl relative hidden">
+    
+    <!-- Status da Sessão Atual -->
+    <div class="w-full flex justify-between items-center mb-2 px-2 text-xs text-slate-400">
+      <span id="current-deck-title" class="font-bold text-indigo-400 uppercase tracking-wider">Matéria</span>
+      <div class="flex gap-3 font-semibold">
+        <span class="text-emerald-400">✓ <span id="session-rights">0</span></span>
+        <span class="text-rose-400">✗ <span id="session-wrongs">0</span></span>
+      </div>
     </div>
 
-    <!-- Indicador visual de Acerto/Erro ao arrastar -->
-    <div id="swipe-overlay-right" class="hidden absolute top-4 right-4 z-20 bg-emerald-500 text-white font-bold px-4 py-2 rounded-xl shadow-lg transform rotate-12">
+    <!-- Indicadores de Ação (Swipe) -->
+    <div id="swipe-overlay-right" class="hidden absolute top-10 right-4 z-20 bg-emerald-500 text-white font-bold px-4 py-2 rounded-xl shadow-lg transform rotate-12">
       ACERTOU! ✓
     </div>
-    <div id="swipe-overlay-left" class="hidden absolute top-4 left-4 z-20 bg-rose-500 text-white font-bold px-4 py-2 rounded-xl shadow-lg transform -rotate-12">
+    <div id="swipe-overlay-left" class="hidden absolute top-10 left-4 z-20 bg-rose-500 text-white font-bold px-4 py-2 rounded-xl shadow-lg transform -rotate-12">
       ERROU! ✗
     </div>
 
-    <div id="card-container" class="w-full h-[450px] perspective hidden relative">
+    <!-- Container do Flashcard -->
+    <div id="card-container" class="w-full h-[450px] perspective relative">
       <div id="card-inner" class="card-inner draggable-card relative w-full h-full rounded-2xl shadow-2xl bg-slate-800 border border-slate-700">
         
-        <!-- Frente (Pergunta) -->
+        <!-- Frente -->
         <div class="card-front absolute inset-0 w-full h-full flex flex-col items-center justify-center p-4 rounded-2xl">
           <span class="absolute top-3 left-4 text-xs font-semibold uppercase tracking-wider text-indigo-400">Frente (Pergunta)</span>
           <div class="w-full h-full flex items-center justify-center overflow-hidden pt-6 pointer-events-none">
@@ -84,7 +136,7 @@
           </div>
         </div>
 
-        <!-- Verso (Resposta) -->
+        <!-- Verso -->
         <div class="card-back absolute inset-0 w-full h-full flex flex-col items-center justify-center p-4 rounded-2xl">
           <span class="absolute top-3 left-4 text-xs font-semibold uppercase tracking-wider text-emerald-400">Verso (Resposta)</span>
           <div class="w-full h-full flex items-center justify-center overflow-hidden pt-6 pointer-events-none">
@@ -96,8 +148,8 @@
     </div>
   </main>
 
-  <!-- Controles e Atalhos -->
-  <footer id="controls" class="w-full max-w-2xl flex flex-col items-center gap-4 mb-4 hidden">
+  <!-- CONTROLES DA SESSÃO DE ESTUDO -->
+  <footer id="study-controls" class="w-full max-w-2xl flex flex-col items-center gap-4 mb-4 hidden">
     <div class="flex items-center gap-4">
       <button id="fail-btn" class="bg-rose-900/40 hover:bg-rose-800/60 text-rose-300 border border-rose-700/50 px-4 py-2 rounded-lg font-medium transition flex items-center gap-2">
         <span>←</span> Errei (Esquerda)
@@ -109,102 +161,232 @@
     </div>
     <p class="text-xs text-slate-500 text-center">
       Clique/Toque no card para virar.<br>
-      Arraste para as laterais ou use as setas do teclado (<kbd class="px-1 bg-slate-800 rounded">←</kbd> Errou / <kbd class="px-1 bg-slate-800 rounded">→</kbd> Acertou).
+      Arraste para os lados ou use as setas do teclado (<kbd class="px-1 bg-slate-800 rounded">←</kbd> Errou / <kbd class="px-1 bg-slate-800 rounded">→</kbd> Acertou).
     </p>
   </footer>
 
   <script>
     pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
 
-    let cardsDeck = []; // Guarda os pares de cards ({ pdfDoc, frontPage, backPage })
+    // Estados da aplicação
+    let pdfFilesList = [];
+    let cardsDeck = [];
     let currentCardIndex = 0;
+    let currentDeckKey = "";
+    let sessionRights = 0;
+    let sessionWrongs = 0;
 
-    const pdfSelect = document.getElementById('pdf-select');
+    // Elementos do DOM
+    const dashboardView = document.getElementById('dashboard-view');
+    const studyView = document.getElementById('study-view');
+    const studyControls = document.getElementById('study-controls');
+    const homeBtn = document.getElementById('home-btn');
+    const decksGrid = document.getElementById('decks-grid');
+    const startRandomBtn = document.getElementById('start-random-btn');
     const pdfInput = document.getElementById('pdf-input');
+    
+    const overallPercentage = document.getElementById('overall-percentage');
+    const overallBar = document.getElementById('overall-bar');
+    const overallStatsText = document.getElementById('overall-stats-text');
+    const resetStatsBtn = document.getElementById('reset-stats-btn');
+
     const cardInner = document.getElementById('card-inner');
-    const cardContainer = document.getElementById('card-container');
-    const welcomeMessage = document.getElementById('welcome-message');
-    const controls = document.getElementById('controls');
     const cardCounter = document.getElementById('card-counter');
+    const currentDeckTitle = document.getElementById('current-deck-title');
+    const sessionRightsEl = document.getElementById('session-rights');
+    const sessionWrongsEl = document.getElementById('session-wrongs');
     const failBtn = document.getElementById('fail-btn');
     const successBtn = document.getElementById('success-btn');
     const overlayRight = document.getElementById('swipe-overlay-right');
     const overlayLeft = document.getElementById('swipe-overlay-left');
 
-    // Identifica usuário e repositório automaticamente pela URL
+    // Identificação do GitHub
     const pathSegments = window.location.pathname.split('/').filter(Boolean);
     const githubUser = window.location.hostname.split('.')[0];
     const repoName = pathSegments[0] || '';
 
-    // Buscar PDFs no repositório do GitHub automaticamente
+    /* -------------------------------------------------------------
+       GERENCIAMENTO DE LOCALSTORAGE (ESTATÍSTICAS)
+    ------------------------------------------------------------- */
+    function getStats() {
+      const stats = localStorage.getItem('flashcards_med_stats');
+      return stats ? JSON.parse(stats) : {};
+    }
+
+    function saveStats(stats) {
+      localStorage.setItem('flashcards_med_stats', JSON.stringify(stats));
+    }
+
+    function recordAnswer(deckKey, isRight) {
+      const stats = getStats();
+      if (!stats[deckKey]) {
+        stats[deckKey] = { rights: 0, wrongs: 0 };
+      }
+      if (isRight) {
+        stats[deckKey].rights++;
+        sessionRights++;
+      } else {
+        stats[deckKey].wrongs++;
+        sessionWrongs++;
+      }
+      saveStats(stats);
+      updateSessionUI();
+    }
+
+    function calculatePercentage(rights, wrongs) {
+      const total = rights + wrongs;
+      if (total === 0) return 0;
+      return Math.round((rights / total) * 100);
+    }
+
+    function updateDashboardUI() {
+      const stats = getStats();
+      let totalRights = 0;
+      let totalWrongs = 0;
+
+      // Atualiza estáticas de cada deck
+      pdfFilesList.forEach(file => {
+        const key = file.name;
+        const deckStats = stats[key] || { rights: 0, wrongs: 0 };
+        totalRights += deckStats.rights;
+        totalWrongs += deckStats.wrongs;
+
+        const pct = calculatePercentage(deckStats.rights, deckStats.wrongs);
+        const barEl = document.getElementById(`bar-${key}`);
+        const pctEl = document.getElementById(`pct-${key}`);
+        const textEl = document.getElementById(`text-${key}`);
+
+        if (barEl && pctEl && textEl) {
+          pctEl.textContent = `${pct}%`;
+          barEl.style.width = `${pct}%`;
+          textEl.textContent = `${deckStats.rights} acertos / ${deckStats.wrongs} erros`;
+
+          // Cor dinâmica da barra
+          if (pct >= 70) barEl.className = "h-full rounded-full transition-all duration-500 bg-emerald-500";
+          else if (pct >= 40) barEl.className = "h-full rounded-full transition-all duration-500 bg-amber-500";
+          else if (pct > 0) barEl.className = "h-full rounded-full transition-all duration-500 bg-rose-500";
+          else barEl.className = "h-full rounded-full transition-all duration-500 bg-slate-600";
+        }
+      });
+
+      // Atualiza Estatística Geral
+      const overallPct = calculatePercentage(totalRights, totalWrongs);
+      overallPercentage.textContent = `${overallPct}%`;
+      overallBar.style.width = `${overallPct}%`;
+      overallStatsText.textContent = `${totalRights} acertos / ${totalWrongs} erros totais`;
+    }
+
+    resetStatsBtn.addEventListener('click', () => {
+      if (confirm("Deseja apagar todas as estatísticas de acertos/erros acumuladas?")) {
+        localStorage.removeItem('flashcards_med_stats');
+        updateDashboardUI();
+      }
+    });
+
+    /* -------------------------------------------------------------
+       CARREGAMENTO DA BIBLIOTECA
+    ------------------------------------------------------------- */
     async function carregarBibliotecaGitHub() {
-      pdfSelect.innerHTML = '<option value="">-- Selecione uma Matéria --</option>';
-      
-      let pdfFiles = [];
+      pdfFilesList = [];
+      decksGrid.innerHTML = '';
 
       if (githubUser && repoName) {
         try {
           const response = await fetch(`https://api.github.com/repos/${githubUser}/${repoName}/contents`);
           const files = await response.json();
           if (Array.isArray(files)) {
-            pdfFiles = files.filter(f => f.name.toLowerCase().endsWith('.pdf'));
+            pdfFilesList = files.filter(f => f.name.toLowerCase().endsWith('.pdf'));
           }
-        } catch (e) {
-          console.log("Servidor local ou erro na API do GitHub");
-        }
+        } catch (e) { console.error(e); }
       }
 
-      if (pdfFiles.length > 0) {
-        // Adiciona a opção do Deck Aleatório
-        const randomOpt = document.createElement('option');
-        randomOpt.value = "ALL_RANDOM";
-        randomOpt.textContent = "🎲 TODAS AS MATÉRIAS (Modo Aleatório)";
-        pdfSelect.appendChild(randomOpt);
+      if (pdfFilesList.length > 0) {
+        pdfFilesList.forEach(file => {
+          const cleanName = file.name.replace(/\.pdf$/i, '').replace(/[-_]/g, ' ').toUpperCase();
+          
+          const cardHtml = `
+            <div onclick="estudarDeck('${file.download_url || file.name}', '${file.name}', '${cleanName}')" 
+                 class="bg-slate-800 hover:bg-slate-750 border border-slate-700/80 hover:border-indigo-500/50 p-5 rounded-2xl cursor-pointer transition shadow-lg flex flex-col justify-between gap-4 group">
+              <div>
+                <div class="flex justify-between items-start gap-2 mb-2">
+                  <h4 class="font-bold text-slate-100 group-hover:text-indigo-400 transition">${cleanName}</h4>
+                  <span class="text-xs bg-slate-900 text-slate-400 px-2 py-1 rounded border border-slate-700">PDF</span>
+                </div>
+              </div>
 
-        // Adiciona as matérias individuais
-        pdfFiles.forEach(file => {
-          const option = document.createElement('option');
-          option.value = file.download_url || file.name;
-          // Deixa o nome limpo (Remove .pdf e substitui hífen/underline)
-          option.textContent = file.name.replace(/\.pdf$/i, '').replace(/[-_]/g, ' ').toUpperCase();
-          pdfSelect.appendChild(option);
+              <div class="space-y-1.5">
+                <div class="flex justify-between text-xs font-semibold">
+                  <span class="text-slate-400">Aproveitamento</span>
+                  <span id="pct-${file.name}" class="text-indigo-400">0%</span>
+                </div>
+                <div class="w-full bg-slate-900 h-2 rounded-full overflow-hidden border border-slate-700/30">
+                  <div id="bar-${file.name}" class="bg-slate-600 h-full rounded-full transition-all duration-500" style="width: 0%"></div>
+                </div>
+                <div id="text-${file.name}" class="text-[10px] text-slate-500 text-right">0 acertos / 0 erros</div>
+              </div>
+            </div>
+          `;
+          decksGrid.innerHTML += cardHtml;
         });
+
+        updateDashboardUI();
       } else {
-        pdfSelect.innerHTML = '<option value="">Nenhum PDF encontrado na pasta</option>';
+        decksGrid.innerHTML = `
+          <div class="col-span-full text-center py-10 bg-slate-800/40 rounded-2xl border border-slate-800">
+            <p class="text-slate-400 font-medium">Nenhum PDF encontrado na pasta do repositório.</p>
+            <p class="text-xs text-slate-500 mt-1">Envie seus PDFs diretamente para o GitHub para preencher este painel.</p>
+          </div>
+        `;
       }
     }
 
     carregarBibliotecaGitHub();
 
-    // Evento de escolha no menu suspenso
-    pdfSelect.addEventListener('change', async (e) => {
-      const val = e.target.value;
-      if (!val) return;
+    /* -------------------------------------------------------------
+       INICIAR SESSÃO DE ESTUDO
+    ------------------------------------------------------------- */
+    async function estudarDeck(url, key, titulo) {
+      currentDeckKey = key;
+      currentDeckTitle.textContent = titulo;
+      sessionRights = 0;
+      sessionWrongs = 0;
+      updateSessionUI();
 
       cardsDeck = [];
-      welcomeMessage.textContent = "Carregando materiais...";
+      const pdfDoc = await pdfjsLib.getDocument(url).promise;
+      extrairCardsDePdf(pdfDoc);
 
-      if (val === "ALL_RANDOM") {
-        // Carrega todos os PDFs da pasta e junta em 1 deck aleatório
-        const options = Array.from(pdfSelect.options).filter(opt => opt.value && opt.value !== "ALL_RANDOM");
-        for (let opt of options) {
-          try {
-            const pdfDoc = await pdfjsLib.getDocument(opt.value).promise;
-            extrairCardsDePdf(pdfDoc);
-          } catch(err) { console.error(err); }
-        }
-        // Embaralha o deck montado
-        embaralharArray(cardsDeck);
-      } else {
-        // Carrega apenas o PDF selecionado
-        const pdfDoc = await pdfjsLib.getDocument(val).promise;
-        extrairCardsDePdf(pdfDoc);
+      exibirTelaEstudo();
+      iniciarFlashcards();
+    }
+
+    startRandomBtn.addEventListener('click', async () => {
+      if (pdfFilesList.length === 0) return alert("Nenhuma matéria cadastrada.");
+
+      currentDeckKey = "DECK_ALEATORIO";
+      currentDeckTitle.textContent = "🎲 TODAS AS MATÉRIAS (ALEATÓRIO)";
+      sessionRights = 0;
+      sessionWrongs = 0;
+      updateSessionUI();
+
+      cardsDeck = [];
+      startRandomBtn.textContent = "Carregando...";
+
+      for (let file of pdfFilesList) {
+        try {
+          const pdfDoc = await pdfjsLib.getDocument(file.download_url || file.name).promise;
+          extrairCardsDePdf(pdfDoc, file.name);
+        } catch(e) {}
       }
 
+      startRandomBtn.textContent = "⚡ Estudar Tudo Aleatório";
+      embaralharArray(cardsDeck);
+
+      exibirTelaEstudo();
       iniciarFlashcards();
     });
 
-    // Evento de Upload Temporário Local
+    // Upload de PDF Temporário
     pdfInput.addEventListener('change', async (e) => {
       const file = e.target.files[0];
       if (!file) return;
@@ -214,21 +396,27 @@
         const typedarray = new Uint8Array(this.result);
         const pdfDoc = await pdfjsLib.getDocument(typedarray).promise;
         cardsDeck = [];
-        extrairCardsDePdf(pdfDoc);
-        pdfSelect.value = "";
+        currentDeckKey = `TEMP_${file.name}`;
+        currentDeckTitle.textContent = file.name;
+        sessionRights = 0;
+        sessionWrongs = 0;
+        updateSessionUI();
+
+        extrairCardsDePdf(pdfDoc, currentDeckKey);
+        exibirTelaEstudo();
         iniciarFlashcards();
       };
       fileReader.readAsArrayBuffer(file);
     });
 
-    // Separa as páginas em pares (Ímpar = Pergunta, Par = Resposta)
-    function extrairCardsDePdf(pdfDoc) {
+    function extrairCardsDePdf(pdfDoc, fileKey = currentDeckKey) {
       const totalPages = pdfDoc.numPages;
       const numCards = Math.ceil(totalPages / 2);
 
       for (let i = 0; i < numCards; i++) {
         cardsDeck.push({
           pdfDoc: pdfDoc,
+          fileKey: fileKey,
           frontPageNum: (i * 2) + 1,
           backPageNum: (i * 2) + 2 <= totalPages ? (i * 2) + 2 : null
         });
@@ -242,21 +430,42 @@
       }
     }
 
+    function exibirTelaEstudo() {
+      dashboardView.classList.add('hidden');
+      studyView.classList.remove('hidden');
+      studyControls.classList.remove('hidden');
+      homeBtn.classList.remove('hidden');
+    }
+
+    function exibirDashboard() {
+      studyView.classList.add('hidden');
+      studyControls.classList.add('hidden');
+      homeBtn.classList.add('hidden');
+      dashboardView.classList.remove('hidden');
+      updateDashboardUI();
+    }
+
+    homeBtn.addEventListener('click', exibirDashboard);
+
+    function updateSessionUI() {
+      sessionRightsEl.textContent = sessionRights;
+      sessionWrongsEl.textContent = sessionWrongs;
+    }
+
+    /* -------------------------------------------------------------
+       RENDERIZAÇÃO E NAVEGAÇÃO DOS FLASHCARDS
+    ------------------------------------------------------------- */
     function iniciarFlashcards() {
       if (cardsDeck.length === 0) {
-        alert("Nenhum card foi encontrado nesse material.");
+        alert("Nenhum card encontrado.");
+        exibirDashboard();
         return;
       }
       currentCardIndex = 0;
-      welcomeMessage.classList.add('hidden');
-      cardContainer.classList.remove('hidden');
-      controls.classList.remove('hidden');
-
       renderCurrentCard();
     }
 
     async function renderCurrentCard() {
-      // Reseta estilo e posição do card
       cardInner.classList.remove('flipped');
       cardInner.style.transform = '';
       cardInner.style.opacity = '1';
@@ -265,10 +474,8 @@
 
       const currentCard = cardsDeck[currentCardIndex];
 
-      // Renderiza Frente
       await renderPageToCanvas(currentCard.pdfDoc, currentCard.frontPageNum, 'front-canvas');
 
-      // Renderiza Verso
       if (currentCard.backPageNum) {
         await renderPageToCanvas(currentCard.pdfDoc, currentCard.backPageNum, 'back-canvas');
       } else {
@@ -297,22 +504,20 @@
     }
 
     /* -------------------------------------------------------------
-       LÓGICA DE ARRASTAR O CARD (SWIPE) E BOTÕES DE ACERTO/ERRO
+       GESTOS DE ARRASTAR (SWIPE) E BOTÕES
     ------------------------------------------------------------- */
     let startX = 0;
     let currentX = 0;
     let isDragging = false;
     let isFlipped = false;
 
-    // Click simples vira o card
-    cardInner.addEventListener('click', (e) => {
-      if (Math.abs(currentX - startX) < 10) { // Se quase não arrastou, trata como clique
+    cardInner.addEventListener('click', () => {
+      if (Math.abs(currentX - startX) < 10) {
         cardInner.classList.toggle('flipped');
         isFlipped = cardInner.classList.contains('flipped');
       }
     });
 
-    // Início do Drag / Touch
     function onStart(e) {
       isDragging = true;
       startX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
@@ -320,18 +525,15 @@
       cardInner.classList.remove('card-reset');
     }
 
-    // Durante o Drag / Touch
     function onMove(e) {
       if (!isDragging) return;
       currentX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
       const deltaX = currentX - startX;
-      const rotateDeg = deltaX * 0.05; // Inclinação leve ao arrastar
+      const rotateDeg = deltaX * 0.05;
 
-      // Mantém a rotação de virado (180 deg) se o card já estiver no verso
       const baseRotation = isFlipped ? 'rotateY(180deg)' : '';
       cardInner.style.transform = `translateX(${deltaX}px) rotate(${rotateDeg}deg) ${baseRotation}`;
 
-      // Mostra selos de Acertou/Errou
       if (deltaX > 50) {
         overlayRight.classList.remove('hidden');
         overlayLeft.classList.add('hidden');
@@ -344,19 +546,17 @@
       }
     }
 
-    // Fim do Drag / Touch
     function onEnd() {
       if (!isDragging) return;
       isDragging = false;
       const deltaX = currentX - startX;
-      const threshold = 100; // Distância mínima para validar a resposta
+      const threshold = 100;
 
       if (deltaX > threshold) {
-        processarResposta(true); // Acertou (Direita)
+        processarResposta(true);
       } else if (deltaX < -threshold) {
-        processarResposta(false); // Errou (Esquerda)
+        processarResposta(false);
       } else {
-        // Voltar ao centro
         cardInner.classList.add('card-reset');
         const baseRotation = isFlipped ? 'rotateY(180deg)' : '';
         cardInner.style.transform = baseRotation;
@@ -373,15 +573,17 @@
     document.addEventListener('touchmove', onMove, { passive: true });
     document.addEventListener('touchend', onEnd);
 
-    // Botões de clique
     failBtn.addEventListener('click', () => processarResposta(false));
     successBtn.addEventListener('click', () => processarResposta(true));
 
     function processarResposta(acertou) {
+      // Regista estatística da matéria específica deste card
+      const activeCard = cardsDeck[currentCardIndex];
+      recordAnswer(activeCard.fileKey || currentDeckKey, acertou);
+
       cardInner.classList.add('card-swiping');
       const baseRotation = isFlipped ? 'rotateY(180deg)' : '';
       
-      // Anima o card saindo da tela
       if (acertou) {
         cardInner.style.transform = `translateX(500px) rotate(30deg) ${baseRotation}`;
       } else {
@@ -395,25 +597,24 @@
           currentCardIndex++;
           renderCurrentCard();
         } else {
-          alert("Parabéns! Você concluiu todos os cards desse conjunto.");
-          currentCardIndex = 0;
-          renderCurrentCard();
+          const pctSessao = calculatePercentage(sessionRights, sessionWrongs);
+          alert(`Sessão concluída!\n\nAcertos: ${sessionRights}\nErros: ${sessionWrongs}\nAproveitamento: ${pctSessao}%`);
+          exibirDashboard();
         }
       }, 200);
     }
 
-    // Atalhos do Teclado
     document.addEventListener('keydown', (e) => {
-      if (cardContainer.classList.contains('hidden')) return;
+      if (studyView.classList.contains('hidden')) return;
 
       if (e.code === 'Space') {
         e.preventDefault();
         cardInner.classList.toggle('flipped');
         isFlipped = cardInner.classList.contains('flipped');
       } else if (e.code === 'ArrowRight') {
-        processarResposta(true); // Acertou
+        processarResposta(true);
       } else if (e.code === 'ArrowLeft') {
-        processarResposta(false); // Errou
+        processarResposta(false);
       }
     });
   </script>
