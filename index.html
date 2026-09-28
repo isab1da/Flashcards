@@ -332,7 +332,6 @@
       }, 150);
     }
 
-    // Função para abrir/fechar a pasta
     function toggleFolder(folderId) {
       const content = document.getElementById(`folder-content-${folderId}`);
       const arrow = document.getElementById(`folder-arrow-${folderId}`);
@@ -367,10 +366,11 @@
 
         pdfFilesList.forEach(file => {
           let folderName = "GERAL / OUTROS";
-          let topicName = file.name.replace(/\.pdf$/i, '');
+          let cleanFileName = file.name.replace(/\.pdf$/i, '');
+          let topicName = cleanFileName;
 
-          if (file.name.includes('-')) {
-            const parts = file.name.split('-');
+          if (cleanFileName.includes('-')) {
+            const parts = cleanFileName.split('-');
             folderName = parts[0].trim().toUpperCase();
             topicName = parts.slice(1).join('-').trim();
           }
@@ -388,7 +388,7 @@
 
           for (let item of items) {
             const file = item.file;
-            const cleanTopic = item.topicName.replace(/[-_]/g, ' ').toUpperCase();
+            const cleanTopic = item.topicName.replace(/\.pdf$/i, '').replace(/[-_]/g, ' ').toUpperCase();
             
             let dueCardsCount = 0;
             let totalCardsCount = 0;
@@ -586,7 +586,7 @@
         const typedarray = new Uint8Array(this.result);
         const pdfDoc = await pdfjsLib.getDocument(typedarray).promise;
         cardsDeck = [];
-        currentDeckTitle.textContent = file.name;
+        currentDeckTitle.textContent = file.name.replace(/\.pdf$/i, '');
         sessionRights = 0;
         sessionWrongs = 0;
         updateSessionUI();
@@ -595,7 +595,7 @@
         exibirTelaEstudo();
         iniciarFlashcards();
       };
-      fileReader.readAsArrayBuffer(file);
+      fileReader.readAsBuffer(file);
     });
 
     function extrairCardsDePdf(pdfDoc, fileKey, apenasDevidos) {
