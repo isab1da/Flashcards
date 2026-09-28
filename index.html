@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Flashcards Medicina - SRS & Desempenho</title>
+  <title>Flashcards Medicina - Pastas & Especialidades</title>
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- PDF.js -->
@@ -32,9 +32,6 @@
     .card-swiping {
       transition: transform 0.15s ease-out, opacity 0.15s ease-out;
     }
-    .card-reset {
-      transition: transform 0.3s ease-out, opacity 0.3s ease-out;
-    }
   </style>
 </head>
 <body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col items-center justify-between p-4 font-sans">
@@ -59,27 +56,27 @@
   <!-- TELA 1: DASHBOARD / PAINEL PRINCIPAL -->
   <main id="dashboard-view" class="w-full max-w-5xl my-6 flex flex-col gap-6">
     
-    <!-- Painel 1: Repetição Espaçada (SRS) -->
+    <!-- Painel SRS Global (Todas as Matérias) -->
     <section class="bg-slate-800/80 border border-slate-700/80 rounded-2xl p-6 shadow-xl">
-      <div class="flex flex-col md:flex-row justify-between md:items-center gap-4 mb-4">
+      <div class="flex flex-col md:flex-row justify-between md:items-center gap-4">
         <div>
           <h2 class="text-xl font-bold text-slate-100 flex items-center gap-2">
-            <span>🧠</span> Repetição Espaçada (SRS)
+            <span>🧠</span> Repetição Espaçada Global (SRS)
           </h2>
-          <p id="srs-summary-text" class="text-xs text-slate-400 mt-1">Calculando cards pendentes para hoje...</p>
+          <p id="srs-summary-text" class="text-xs text-slate-400 mt-1">Calculando cards pendentes de todas as especialidades...</p>
         </div>
         <div class="flex flex-wrap gap-2">
           <button id="start-due-btn" class="bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-2.5 px-5 rounded-xl transition shadow-lg shadow-emerald-600/30 flex items-center justify-center gap-2 disabled:opacity-50">
             🔥 Revisar Cards de Hoje (<span id="due-count">0</span>)
           </button>
           <button id="start-random-btn" class="bg-slate-700 hover:bg-slate-600 text-slate-200 font-semibold py-2.5 px-4 rounded-xl transition flex items-center justify-center gap-2">
-            🎲 Estudo Livre (Tudo)
+            🎲 Estudo Livre (Geral)
           </button>
         </div>
       </div>
     </section>
 
-    <!-- Painel 2: Desempenho Geral e Percentuais -->
+    <!-- Aproveitamento Geral -->
     <section class="bg-slate-800/80 border border-slate-700/80 rounded-2xl p-6 shadow-xl">
       <h3 class="text-lg font-bold text-slate-100 mb-2 flex items-center gap-2">
         <span>📊</span> Aproveitamento Geral
@@ -94,23 +91,23 @@
         </div>
         <div class="flex justify-between text-xs text-slate-500 pt-1">
           <span id="overall-stats-text">0 acertos / 0 erros</span>
-          <button id="reset-stats-btn" class="text-slate-500 hover:text-rose-400 underline transition">Zerar Estatísticas</button>
+          <div class="flex gap-4">
+            <button id="reset-stats-btn" class="text-slate-500 hover:text-rose-400 underline transition">Zerar Estatísticas</button>
+            <button id="reset-srs-btn" class="text-slate-500 hover:text-rose-400 underline transition">Zerar Agendamento SRS</button>
+          </div>
         </div>
       </div>
     </section>
 
-    <!-- Grade de Matérias Cadastradas -->
+    <!-- Pastas de Especialidades Médicas -->
     <section>
-      <div class="flex justify-between items-center mb-4">
-        <h3 class="text-lg font-bold text-slate-300 flex items-center gap-2">
-          <span>📚</span> Minhas Matérias
-        </h3>
-        <button id="reset-srs-btn" class="text-xs text-slate-500 hover:text-rose-400 underline transition">Zerar Agendamento SRS</button>
-      </div>
+      <h3 class="text-lg font-bold text-slate-300 mb-4 flex items-center gap-2">
+        <span>📁</span> Especialidades Médicas (Pastas)
+      </h3>
 
-      <div id="decks-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        <div class="col-span-full text-center py-10 text-slate-500">
-          Carregando biblioteca de matérias do GitHub...
+      <div id="folders-grid" class="flex flex-col gap-6">
+        <div class="text-center py-10 text-slate-500">
+          Carregando biblioteca de especialidades...
         </div>
       </div>
     </section>
@@ -119,9 +116,8 @@
   <!-- TELA 2: ÁREA DE ESTUDO DOS FLASHCARDS -->
   <main id="study-view" class="flex-1 flex flex-col items-center justify-center my-4 w-full max-w-2xl relative hidden">
     
-    <!-- Header da Sessão -->
     <div class="w-full flex justify-between items-center mb-2 px-2 text-xs text-slate-400">
-      <span id="current-deck-title" class="font-bold text-indigo-400 uppercase tracking-wider">Matéria</span>
+      <span id="current-deck-title" class="font-bold text-indigo-400 uppercase tracking-wider">Especialidade / Tema</span>
       <div class="flex gap-3 font-semibold">
         <span class="text-emerald-400">✓ <span id="session-rights">0</span></span>
         <span class="text-rose-400">✗ <span id="session-wrongs">0</span></span>
@@ -154,7 +150,7 @@
     </div>
   </main>
 
-  <!-- CONTROLES SRS (4 BOTÕES NO VERSO) -->
+  <!-- CONTROLES SRS -->
   <footer id="study-controls" class="w-full max-w-2xl flex flex-col items-center gap-3 mb-4 hidden">
     <div id="srs-buttons" class="w-full grid grid-cols-4 gap-2">
       <button onclick="responderSRS(1)" class="bg-rose-900/40 hover:bg-rose-800/70 border border-rose-700/50 text-rose-200 py-3 rounded-xl flex flex-col items-center transition">
@@ -163,15 +159,15 @@
       </button>
       <button onclick="responderSRS(2)" class="bg-amber-900/40 hover:bg-amber-800/70 border border-amber-700/50 text-amber-200 py-3 rounded-xl flex flex-col items-center transition">
         <span class="font-bold text-sm">Difícil</span>
-        <span id="hard-label" class="text-[10px] opacity-75">x1.2</span>
+        <span class="text-[10px] opacity-75">x1.2</span>
       </button>
       <button onclick="responderSRS(3)" class="bg-emerald-900/40 hover:bg-emerald-800/70 border border-emerald-700/50 text-emerald-200 py-3 rounded-xl flex flex-col items-center transition">
         <span class="font-bold text-sm">Bom</span>
-        <span id="good-label" class="text-[10px] opacity-75">x2.5</span>
+        <span class="text-[10px] opacity-75">x2.5</span>
       </button>
       <button onclick="responderSRS(4)" class="bg-sky-900/40 hover:bg-sky-800/70 border border-sky-700/50 text-sky-200 py-3 rounded-xl flex flex-col items-center transition">
         <span class="font-bold text-sm">Fácil</span>
-        <span id="easy-label" class="text-[10px] opacity-75">x3.5</span>
+        <span class="text-[10px] opacity-75">x3.5</span>
       </button>
     </div>
     <p class="text-xs text-slate-500 text-center">
@@ -182,20 +178,18 @@
   <script>
     pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
 
-    // Estados da aplicação
     let pdfFilesList = [];
+    let foldersMap = {};
     let cardsDeck = [];
     let currentCardIndex = 0;
-    let currentDeckTitleText = "";
     let sessionRights = 0;
     let sessionWrongs = 0;
 
-    // Elementos DOM
     const dashboardView = document.getElementById('dashboard-view');
     const studyView = document.getElementById('study-view');
     const studyControls = document.getElementById('study-controls');
     const homeBtn = document.getElementById('home-btn');
-    const decksGrid = document.getElementById('decks-grid');
+    const foldersGrid = document.getElementById('folders-grid');
     const startDueBtn = document.getElementById('start-due-btn');
     const dueCountEl = document.getElementById('due-count');
     const startRandomBtn = document.getElementById('start-random-btn');
@@ -214,14 +208,11 @@
     const sessionRightsEl = document.getElementById('session-rights');
     const sessionWrongsEl = document.getElementById('session-wrongs');
 
-    // Identificação do GitHub
     const pathSegments = window.location.pathname.split('/').filter(Boolean);
     const githubUser = window.location.hostname.split('.')[0];
     const repoName = pathSegments[0] || '';
 
-    /* -------------------------------------------------------------
-       ESTATÍSTICAS & DESEMPENHO (PERCENTUAIS)
-    ------------------------------------------------------------- */
+    /* ESTATÍSTICAS */
     function getStats() {
       const stats = localStorage.getItem('flashcards_med_stats');
       return stats ? JSON.parse(stats) : {};
@@ -233,24 +224,16 @@
 
     function recordAnswer(deckKey, isRight) {
       const stats = getStats();
-      if (!stats[deckKey]) {
-        stats[deckKey] = { rights: 0, wrongs: 0 };
-      }
-      if (isRight) {
-        stats[deckKey].rights++;
-        sessionRights++;
-      } else {
-        stats[deckKey].wrongs++;
-        sessionWrongs++;
-      }
+      if (!stats[deckKey]) stats[deckKey] = { rights: 0, wrongs: 0 };
+      if (isRight) { stats[deckKey].rights++; sessionRights++; }
+      else { stats[deckKey].wrongs++; sessionWrongs++; }
       saveStats(stats);
       updateSessionUI();
     }
 
     function calculatePercentage(rights, wrongs) {
       const total = rights + wrongs;
-      if (total === 0) return 0;
-      return Math.round((rights / total) * 100);
+      return total === 0 ? 0 : Math.round((rights / total) * 100);
     }
 
     function updateDashboardStats() {
@@ -287,16 +270,7 @@
       overallStatsText.textContent = `${totalRights} acertos / ${totalWrongs} erros totais`;
     }
 
-    resetStatsBtn.addEventListener('click', () => {
-      if (confirm("Deseja apagar todas as estatísticas de acertos/erros acumuladas?")) {
-        localStorage.removeItem('flashcards_med_stats');
-        updateDashboardStats();
-      }
-    });
-
-    /* -------------------------------------------------------------
-       SISTEMA DE REPETIÇÃO ESPAÇADA (SUPERMEMO-2 MODIFICADO)
-    ------------------------------------------------------------- */
+    /* REPETIÇÃO ESPAÇADA (SRS) */
     function getSrsData() {
       const data = localStorage.getItem('flashcards_srs_data');
       return data ? JSON.parse(data) : {};
@@ -326,17 +300,11 @@
       const cardKey = getCardKey(activeCard);
       const srsData = getSrsData();
 
-      // Regista estatística visual de acerto/erro
       recordAnswer(activeCard.fileKey, rating > 1);
 
-      let cardInfo = srsData[cardKey] || {
-        interval: 0,
-        factor: 2.5,
-        reviews: 0,
-        nextReview: getTodayString()
-      };
+      let cardInfo = srsData[cardKey] || { interval: 0, factor: 2.5, reviews: 0, nextReview: getTodayString() };
 
-      if (rating === 1) { // Errei
+      if (rating === 1) {
         cardInfo.interval = 1;
         cardInfo.factor = Math.max(1.3, cardInfo.factor - 0.2);
         cardsDeck.push(activeCard);
@@ -360,7 +328,6 @@
       srsData[cardKey] = cardInfo;
       saveSrsData(srsData);
 
-      // Animação de saída
       cardInner.classList.add('card-swiping');
       cardInner.style.transform = rating === 1 ? 'translateX(-400px) rotate(-20deg)' : 'translateX(400px) rotate(20deg)';
       cardInner.style.opacity = '0';
@@ -377,19 +344,11 @@
       }, 150);
     }
 
-    resetSrsBtn.addEventListener('click', () => {
-      if (confirm("Deseja apagar todo o histórico de agendamentos do SRS? Todos os cards voltarão a ser considerados 'novos'.")) {
-        localStorage.removeItem('flashcards_srs_data');
-        carregarBibliotecaGitHub();
-      }
-    });
-
-    /* -------------------------------------------------------------
-       CARREGAMENTO E MONTAGEM DA BIBLIOTECA
-    ------------------------------------------------------------- */
+    /* CARREGAR PASTAS E ESPECIFICIDADES */
     async function carregarBibliotecaGitHub() {
       pdfFilesList = [];
-      decksGrid.innerHTML = '';
+      foldersMap = {};
+      foldersGrid.innerHTML = '';
       let totalDueGlobal = 0;
 
       if (githubUser && repoName) {
@@ -405,88 +364,148 @@
       if (pdfFilesList.length > 0) {
         const srsData = getSrsData();
 
-        for (let file of pdfFilesList) {
-          const cleanName = file.name.replace(/\.pdf$/i, '').replace(/[-_]/g, ' ').toUpperCase();
-          
-          let dueCardsCount = 0;
-          let totalCardsCount = 0;
+        // Agrupa os arquivos por prefixo (Ex: "ENDOCRINO - Diabetes.pdf" -> Pasta "ENDOCRINO")
+        pdfFilesList.forEach(file => {
+          let folderName = "GERAL / OUTROS";
+          let topicName = file.name.replace(/\.pdf$/i, '');
 
-          try {
-            const pdfDoc = await pdfjsLib.getDocument(file.download_url || file.name).promise;
-            totalCardsCount = Math.ceil(pdfDoc.numPages / 2);
+          if (file.name.includes('-')) {
+            const parts = file.name.split('-');
+            folderName = parts[0].trim().toUpperCase();
+            topicName = parts.slice(1).join('-').trim();
+          }
 
-            for (let i = 0; i < totalCardsCount; i++) {
-              const k = `${file.name}_card_${(i * 2) + 1}`;
-              if (isCardDue(srsData[k])) dueCardsCount++;
-            }
-          } catch(err) {}
+          if (!foldersMap[folderName]) foldersMap[folderName] = [];
+          foldersMap[folderName].push({ file, topicName });
+        });
 
-          totalDueGlobal += dueCardsCount;
+        // Renderiza cada pasta
+        for (let folderName in foldersMap) {
+          const items = foldersMap[folderName];
+          let folderCardsHtml = '';
 
-          const cardHtml = `
-            <div onclick="estudarDeck('${file.download_url || file.name}', '${file.name}', '${cleanName}', false)" 
-                 class="bg-slate-800 hover:bg-slate-750 border border-slate-700 hover:border-indigo-500/50 p-5 rounded-2xl cursor-pointer transition shadow-lg flex flex-col justify-between gap-4 group">
-              <div>
-                <div class="flex justify-between items-start gap-2 mb-2">
-                  <h4 class="font-bold text-slate-100 group-hover:text-indigo-400 transition">${cleanName}</h4>
-                  <span class="text-xs bg-slate-900 text-slate-400 px-2 py-0.5 rounded border border-slate-700">${totalCardsCount} cards</span>
+          for (let item of items) {
+            const file = item.file;
+            const cleanTopic = item.topicName.replace(/[-_]/g, ' ').toUpperCase();
+            
+            let dueCardsCount = 0;
+            let totalCardsCount = 0;
+
+            try {
+              const pdfDoc = await pdfjsLib.getDocument(file.download_url || file.name).promise;
+              totalCardsCount = Math.ceil(pdfDoc.numPages / 2);
+
+              for (let i = 0; i < totalCardsCount; i++) {
+                const k = `${file.name}_card_${(i * 2) + 1}`;
+                if (isCardDue(srsData[k])) dueCardsCount++;
+              }
+            } catch(err) {}
+
+            totalDueGlobal += dueCardsCount;
+
+            folderCardsHtml += `
+              <div onclick="estudarDeck('${file.download_url || file.name}', '${file.name}', '${folderName}: ${cleanTopic}', false)" 
+                   class="bg-slate-900/60 hover:bg-slate-900 border border-slate-700/60 hover:border-indigo-500/50 p-4 rounded-xl cursor-pointer transition flex flex-col justify-between gap-3 group">
+                <div>
+                  <div class="flex justify-between items-start gap-2 mb-1">
+                    <h5 class="font-bold text-slate-200 text-sm group-hover:text-indigo-400 transition">${cleanTopic}</h5>
+                    <span class="text-[10px] bg-slate-800 text-slate-400 px-1.5 py-0.5 rounded">${totalCardsCount} cards</span>
+                  </div>
+
+                  <div class="space-y-1 my-2">
+                    <div class="flex justify-between text-[11px] font-semibold">
+                      <span class="text-slate-400">Acertos</span>
+                      <span id="pct-${file.name}" class="text-indigo-400">0%</span>
+                    </div>
+                    <div class="w-full bg-slate-950 h-1.5 rounded-full overflow-hidden border border-slate-800">
+                      <div id="bar-${file.name}" class="bg-slate-600 h-full rounded-full transition-all duration-500" style="width: 0%"></div>
+                    </div>
+                    <div id="text-${file.name}" class="text-[9px] text-slate-500 text-right">0/0</div>
+                  </div>
                 </div>
 
-                <!-- Gráfico do Card Individual -->
-                <div class="space-y-1.5 my-2">
-                  <div class="flex justify-between text-xs font-semibold">
-                    <span class="text-slate-400">Acertos</span>
-                    <span id="pct-${file.name}" class="text-indigo-400">0%</span>
-                  </div>
-                  <div class="w-full bg-slate-900 h-2 rounded-full overflow-hidden border border-slate-700/30">
-                    <div id="bar-${file.name}" class="bg-slate-600 h-full rounded-full transition-all duration-500" style="width: 0%"></div>
-                  </div>
-                  <div id="text-${file.name}" class="text-[10px] text-slate-500 text-right">0 acertos / 0 erros</div>
+                <div class="flex items-center justify-between text-[11px] pt-2 border-t border-slate-800">
+                  <span class="text-slate-400">Hoje:</span>
+                  <span class="font-semibold ${dueCardsCount > 0 ? 'text-amber-400' : 'text-emerald-400'}">
+                    ${dueCardsCount > 0 ? `${dueCardsCount} pendentes` : '✓ Em dia'}
+                  </span>
                 </div>
               </div>
+            `;
+          }
 
-              <!-- Status do Agendamento SRS -->
-              <div class="flex items-center justify-between text-xs pt-2 border-t border-slate-700/50">
-                <span class="text-slate-400">Pendente hoje:</span>
-                <span class="font-bold px-2 py-0.5 rounded ${dueCardsCount > 0 ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'}">
-                  ${dueCardsCount > 0 ? `${dueCardsCount} para revisar` : '✓ Em dia'}
-                </span>
+          const folderHtml = `
+            <div class="bg-slate-800/80 border border-slate-700/80 rounded-2xl p-5 shadow-lg space-y-4">
+              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-700/50 pb-3">
+                <div class="flex items-center gap-2">
+                  <span class="text-2xl">📂</span>
+                  <div>
+                    <h4 class="text-lg font-bold text-indigo-300">${folderName}</h4>
+                    <p class="text-xs text-slate-400">${items.length} tema(s) nesta especialidade</p>
+                  </div>
+                </div>
+                <button onclick="estudarMegaDeck('${folderName}')" class="bg-indigo-600/90 hover:bg-indigo-500 text-white text-xs font-semibold py-2 px-4 rounded-xl transition shadow flex items-center justify-center gap-1.5">
+                  ⚡ Mega-Deck (Estudar ${folderName})
+                </button>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                ${folderCardsHtml}
               </div>
             </div>
           `;
-          decksGrid.innerHTML += cardHtml;
+
+          foldersGrid.innerHTML += folderHtml;
         }
 
         dueCountEl.textContent = totalDueGlobal;
         if (totalDueGlobal > 0) {
-          srsSummaryText.textContent = `Você tem ${totalDueGlobal} cards aguardando revisão hoje.`;
+          srsSummaryText.textContent = `Você tem ${totalDueGlobal} cards aguardando revisão hoje entre todas as especialidades.`;
           startDueBtn.disabled = false;
         } else {
-          srsSummaryText.textContent = "Parabéns! Todas as suas revisões estão em dia para hoje.";
+          srsSummaryText.textContent = "Parabéns! Suas revisões estão todas em dia.";
           startDueBtn.disabled = true;
         }
 
         updateDashboardStats();
 
       } else {
-        decksGrid.innerHTML = `
-          <div class="col-span-full text-center py-10 bg-slate-800/40 rounded-2xl border border-slate-800">
-            <p class="text-slate-400 font-medium">Nenhum PDF encontrado na pasta do repositório.</p>
-            <p class="text-xs text-slate-500 mt-1">Envie seus PDFs diretamente para o GitHub para preencher este painel.</p>
+        foldersGrid.innerHTML = `
+          <div class="text-center py-10 bg-slate-800/40 rounded-2xl border border-slate-800">
+            <p class="text-slate-400 font-medium">Nenhum PDF encontrado no repositório.</p>
+            <p class="text-xs text-slate-500 mt-1">Nomeie seus arquivos como "ESPECIALIDADE - Tema.pdf" para organizá-los em pastas!</p>
           </div>
         `;
-        srsSummaryText.textContent = "Nenhuma matéria encontrada.";
-        startDueBtn.disabled = true;
       }
     }
 
     carregarBibliotecaGitHub();
 
-    /* -------------------------------------------------------------
-       INICIAR SESSÕES DE ESTUDO
-    ------------------------------------------------------------- */
+    /* MEGA-DECK DA PASTA DA ESPECIALIDADE */
+    async function estudarMegaDeck(folderName) {
+      const items = foldersMap[folderName];
+      if (!items || items.length === 0) return;
+
+      currentDeckTitle.textContent = `📂 MEGA-DECK: ${folderName}`;
+      sessionRights = 0;
+      sessionWrongs = 0;
+      updateSessionUI();
+
+      cardsDeck = [];
+
+      for (let item of items) {
+        try {
+          const pdfDoc = await pdfjsLib.getDocument(item.file.download_url || item.file.name).promise;
+          extrairCardsDePdf(pdfDoc, item.file.name, false);
+        } catch(e) {}
+      }
+
+      embaralharArray(cardsDeck);
+      exibirTelaEstudo();
+      iniciarFlashcards();
+    }
+
     async function estudarDeck(url, key, titulo, apenasDevidos = false) {
-      currentDeckTitleText = titulo;
       currentDeckTitle.textContent = titulo;
       sessionRights = 0;
       sessionWrongs = 0;
@@ -503,7 +522,7 @@
     startDueBtn.addEventListener('click', async () => {
       if (pdfFilesList.length === 0) return;
 
-      currentDeckTitle.textContent = "🔥 REVISÃO DO DIA (SRS)";
+      currentDeckTitle.textContent = "🔥 REVISÃO DO DIA (TODAS AS ESPECIALIDADES)";
       sessionRights = 0;
       sessionWrongs = 0;
       updateSessionUI();
@@ -528,7 +547,7 @@
     startRandomBtn.addEventListener('click', async () => {
       if (pdfFilesList.length === 0) return;
 
-      currentDeckTitle.textContent = "🎲 ESTUDO LIVRE (TODAS AS MATÉRIAS)";
+      currentDeckTitle.textContent = "🎲 ESTUDO LIVRE (GERAL)";
       sessionRights = 0;
       sessionWrongs = 0;
       updateSessionUI();
@@ -618,12 +637,9 @@
       sessionWrongsEl.textContent = sessionWrongs;
     }
 
-    /* -------------------------------------------------------------
-       RENDERIZAÇÃO DOS CARDS
-    ------------------------------------------------------------- */
     function iniciarFlashcards() {
       if (cardsDeck.length === 0) {
-        alert("Não há cards pendentes para esta opção!");
+        alert("Não há cards para estudar nesta modalidade!");
         exibirDashboard();
         return;
       }
@@ -681,6 +697,20 @@
       else if (e.key === '2') responderSRS(2);
       else if (e.key === '3') responderSRS(3);
       else if (e.key === '4') responderSRS(4);
+    });
+
+    resetSrsBtn.addEventListener('click', () => {
+      if (confirm("Deseja apagar todo o histórico de agendamentos do SRS? Todos os cards voltarão a ser considerados 'novos'.")) {
+        localStorage.removeItem('flashcards_srs_data');
+        carregarBibliotecaGitHub();
+      }
+    });
+
+    resetStatsBtn.addEventListener('click', () => {
+      if (confirm("Deseja apagar todas as estatísticas de acertos/erros acumuladas?")) {
+        localStorage.removeItem('flashcards_med_stats');
+        updateDashboardStats();
+      }
     });
   </script>
 </body>
