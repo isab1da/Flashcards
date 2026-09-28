@@ -80,7 +80,7 @@
     <!-- Desempenho Geral -->
     <section class="bg-slate-800/80 border border-slate-700/80 rounded-2xl p-6 shadow-xl">
       <h3 class="text-lg font-bold text-slate-100 mb-2 flex items-center gap-2">
-        <span>📊</span> Índices de Domínio Geral
+        <span>📊</span> Seu Domínio Geral
       </h3>
       <div class="space-y-2">
         <div class="flex justify-between text-sm font-medium">
@@ -175,6 +175,47 @@
     
     let sessionPoints = 0;
     let sessionTotalCards = 0;
+
+    // Web Audio API para som de acerto
+    let audioCtx = null;
+    function playSuccessSound() {
+      try {
+        if (!audioCtx) {
+          audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if (audioCtx.state === 'suspended') {
+          audioCtx.resume();
+        }
+
+        const now = audioCtx.currentTime;
+
+        // Nota 1 (Mi / E5)
+        const osc1 = audioCtx.createOscillator();
+        const gain1 = audioCtx.createGain();
+        osc1.type = 'sine';
+        osc1.frequency.setValueAtTime(659.25, now);
+        gain1.gain.setValueAtTime(0.15, now);
+        gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+        osc1.connect(gain1);
+        gain1.connect(audioCtx.destination);
+        osc1.start(now);
+        osc1.stop(now + 0.15);
+
+        // Nota 2 (Si / B5)
+        const osc2 = audioCtx.createOscillator();
+        const gain2 = audioCtx.createGain();
+        osc2.type = 'sine';
+        osc2.frequency.setValueAtTime(987.77, now + 0.08);
+        gain2.gain.setValueAtTime(0.15, now + 0.08);
+        gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+        osc2.connect(gain2);
+        gain2.connect(audioCtx.destination);
+        osc2.start(now + 0.08);
+        osc2.stop(now + 0.3);
+      } catch (e) {
+        console.error("Erro ao tocar áudio:", e);
+      }
+    }
 
     const dashboardView = document.getElementById('dashboard-view');
     const studyView = document.getElementById('study-view');
@@ -295,6 +336,11 @@
 
     function responderSRS(rating) {
       if (cardsDeck.length === 0) return;
+
+      // Som para 'Bom' (3) e 'Fácil' (4)
+      if (rating === 3 || rating === 4) {
+        playSuccessSound();
+      }
 
       const activeCard = cardsDeck[currentCardIndex];
       const cardKey = getCardKey(activeCard);
@@ -429,7 +475,7 @@
 
                   <div class="space-y-1 my-1.5">
                     <div class="flex justify-between text-[10px] font-semibold">
-                      <span class="text-slate-400">Índice Domínio</span>
+                      <span class="text-slate-400">Domínio do Tema</span>
                       <span id="pct-${file.name}" class="text-indigo-400">0%</span>
                     </div>
                     <div class="w-full bg-slate-950 h-1.5 rounded-full overflow-hidden border border-slate-800">
@@ -451,17 +497,17 @@
 
           const folderHtml = `
             <div class="bg-slate-800/80 border border-slate-700/80 rounded-2xl overflow-hidden shadow-lg transition">
-              <div class="p-4 flex items-center justify-between gap-3 bg-slate-800 hover:bg-slate-750 transition cursor-pointer select-none" onclick="toggleFolder(${folderIdx})">
-                <div class="flex items-center gap-3">
-                  <span id="folder-arrow-${folderIdx}" class="text-xs text-indigo-400 font-bold">▼</span>
-                  <span class="text-xl">📂</span>
-                  <div>
-                    <h4 class="font-bold text-slate-100 text-base">${folderName}</h4>
-                    <p class="text-xs text-slate-400">${items.length} tema(s) ${folderDueTotal > 0 ? `• <span class="text-amber-400 font-semibold">${folderDueTotal} pendentes hoje</span>` : '• <span class="text-emerald-400">Em dia</span>'}</p>
+              <div class="p-4 flex items-center justify-between gap-2 bg-slate-800 hover:bg-slate-750 transition cursor-pointer select-none" onclick="toggleFolder(${folderIdx})">
+                <div class="flex items-center gap-2.5 min-w-0">
+                  <span id="folder-arrow-${folderIdx}" class="text-xs text-indigo-400 font-bold shrink-0">▼</span>
+                  <span class="text-xl shrink-0">📂</span>
+                  <div class="truncate">
+                    <h4 class="font-bold text-slate-100 text-sm sm:text-base truncate">${folderName}</h4>
+                    <p class="text-[11px] sm:text-xs text-slate-400 truncate">${items.length} tema(s) ${folderDueTotal > 0 ? `• <span class="text-amber-400 font-semibold">${folderDueTotal} pendentes</span>` : '• <span class="text-emerald-400">Em dia</span>'}</p>
                   </div>
                 </div>
 
-                <button onclick="event.stopPropagation(); estudarMegaDeck('${folderName}')" class="bg-indigo-600/90 hover:bg-indigo-500 text-white text-xs font-semibold py-2 px-3.5 rounded-xl transition shadow flex items-center gap-1.5">
+                <button onclick="event.stopPropagation(); estudarMegaDeck('${folderName}')" class="bg-indigo-600/90 hover:bg-indigo-500 text-white text-xs font-semibold py-2 px-3 rounded-xl transition shadow flex items-center gap-1 shrink-0 whitespace-nowrap">
                   ⚡ Mega-Deck
                 </button>
               </div>
