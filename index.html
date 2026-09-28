@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Flashcards Medicina - Pastas & Especialidades</title>
+  <title>Flashcards Medicina - Pastas Retráteis</title>
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- PDF.js -->
@@ -26,12 +26,8 @@
       user-select: none;
       cursor: grab;
     }
-    .draggable-card:active {
-      cursor: grabbing;
-    }
-    .card-swiping {
-      transition: transform 0.15s ease-out, opacity 0.15s ease-out;
-    }
+    .draggable-card:active { cursor: grabbing; }
+    .card-swiping { transition: transform 0.15s ease-out, opacity 0.15s ease-out; }
   </style>
 </head>
 <body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col items-center justify-between p-4 font-sans">
@@ -53,10 +49,10 @@
     </div>
   </header>
 
-  <!-- TELA 1: DASHBOARD / PAINEL PRINCIPAL -->
+  <!-- TELA 1: DASHBOARD -->
   <main id="dashboard-view" class="w-full max-w-5xl my-6 flex flex-col gap-6">
     
-    <!-- Painel SRS Global (Todas as Matérias) -->
+    <!-- Painel SRS Global -->
     <section class="bg-slate-800/80 border border-slate-700/80 rounded-2xl p-6 shadow-xl">
       <div class="flex flex-col md:flex-row justify-between md:items-center gap-4">
         <div>
@@ -76,7 +72,7 @@
       </div>
     </section>
 
-    <!-- Aproveitamento Geral -->
+    <!-- Desempenho Geral -->
     <section class="bg-slate-800/80 border border-slate-700/80 rounded-2xl p-6 shadow-xl">
       <h3 class="text-lg font-bold text-slate-100 mb-2 flex items-center gap-2">
         <span>📊</span> Aproveitamento Geral
@@ -99,13 +95,13 @@
       </div>
     </section>
 
-    <!-- Pastas de Especialidades Médicas -->
+    <!-- Pastas Retráteis de Especialidades -->
     <section>
       <h3 class="text-lg font-bold text-slate-300 mb-4 flex items-center gap-2">
-        <span>📁</span> Especialidades Médicas (Pastas)
+        <span>📁</span> Especialidades Médicas (Clique na pasta para expandir)
       </h3>
 
-      <div id="folders-grid" class="flex flex-col gap-6">
+      <div id="folders-grid" class="flex flex-col gap-3">
         <div class="text-center py-10 text-slate-500">
           Carregando biblioteca de especialidades...
         </div>
@@ -113,9 +109,8 @@
     </section>
   </main>
 
-  <!-- TELA 2: ÁREA DE ESTUDO DOS FLASHCARDS -->
+  <!-- TELA 2: ÁREA DE ESTUDO -->
   <main id="study-view" class="flex-1 flex flex-col items-center justify-center my-4 w-full max-w-2xl relative hidden">
-    
     <div class="w-full flex justify-between items-center mb-2 px-2 text-xs text-slate-400">
       <span id="current-deck-title" class="font-bold text-indigo-400 uppercase tracking-wider">Especialidade / Tema</span>
       <div class="flex gap-3 font-semibold">
@@ -125,11 +120,8 @@
       <span id="card-counter" class="text-slate-300 font-medium">Card 1 de 1</span>
     </div>
 
-    <!-- Container do Flashcard -->
     <div id="card-container" class="w-full h-[430px] perspective relative">
       <div id="card-inner" class="card-inner draggable-card relative w-full h-full rounded-2xl shadow-2xl bg-slate-800 border border-slate-700">
-        
-        <!-- Frente -->
         <div class="card-front absolute inset-0 w-full h-full flex flex-col items-center justify-center p-4 rounded-2xl">
           <span class="absolute top-3 left-4 text-xs font-semibold uppercase tracking-wider text-indigo-400">Frente (Pergunta)</span>
           <div class="w-full h-full flex items-center justify-center overflow-hidden pt-6 pointer-events-none">
@@ -138,14 +130,12 @@
           <p class="absolute bottom-3 text-xs text-slate-500">Clique para ver a resposta</p>
         </div>
 
-        <!-- Verso -->
         <div class="card-back absolute inset-0 w-full h-full flex flex-col items-center justify-center p-4 rounded-2xl">
           <span class="absolute top-3 left-4 text-xs font-semibold uppercase tracking-wider text-emerald-400">Verso (Resposta)</span>
           <div class="w-full h-full flex items-center justify-center overflow-hidden pt-6 pointer-events-none">
             <canvas id="back-canvas" class="max-w-full max-h-full object-contain rounded"></canvas>
           </div>
         </div>
-
       </div>
     </div>
   </main>
@@ -171,7 +161,7 @@
       </button>
     </div>
     <p class="text-xs text-slate-500 text-center">
-      Atalhos no teclado: <kbd class="px-1 bg-slate-800 rounded">1</kbd> Errei | <kbd class="px-1 bg-slate-800 rounded">2</kbd> Difícil | <kbd class="px-1 bg-slate-800 rounded">3</kbd> Bom | <kbd class="px-1 bg-slate-800 rounded">4</kbd> Fácil
+      Atalhos: <kbd class="px-1 bg-slate-800 rounded">1</kbd> Errei | <kbd class="px-1 bg-slate-800 rounded">2</kbd> Difícil | <kbd class="px-1 bg-slate-800 rounded">3</kbd> Bom | <kbd class="px-1 bg-slate-800 rounded">4</kbd> Fácil
     </p>
   </footer>
 
@@ -212,7 +202,6 @@
     const githubUser = window.location.hostname.split('.')[0];
     const repoName = pathSegments[0] || '';
 
-    /* ESTATÍSTICAS */
     function getStats() {
       const stats = localStorage.getItem('flashcards_med_stats');
       return stats ? JSON.parse(stats) : {};
@@ -270,7 +259,6 @@
       overallStatsText.textContent = `${totalRights} acertos / ${totalWrongs} erros totais`;
     }
 
-    /* REPETIÇÃO ESPAÇADA (SRS) */
     function getSrsData() {
       const data = localStorage.getItem('flashcards_srs_data');
       return data ? JSON.parse(data) : {};
@@ -344,7 +332,20 @@
       }, 150);
     }
 
-    /* CARREGAR PASTAS E ESPECIFICIDADES */
+    // Função para abrir/fechar a pasta
+    function toggleFolder(folderId) {
+      const content = document.getElementById(`folder-content-${folderId}`);
+      const arrow = document.getElementById(`folder-arrow-${folderId}`);
+      
+      if (content.classList.contains('hidden')) {
+        content.classList.remove('hidden');
+        arrow.textContent = '▲';
+      } else {
+        content.classList.add('hidden');
+        arrow.textContent = '▼';
+      }
+    }
+
     async function carregarBibliotecaGitHub() {
       pdfFilesList = [];
       foldersMap = {};
@@ -364,7 +365,6 @@
       if (pdfFilesList.length > 0) {
         const srsData = getSrsData();
 
-        // Agrupa os arquivos por prefixo (Ex: "ENDOCRINO - Diabetes.pdf" -> Pasta "ENDOCRINO")
         pdfFilesList.forEach(file => {
           let folderName = "GERAL / OUTROS";
           let topicName = file.name.replace(/\.pdf$/i, '');
@@ -379,10 +379,12 @@
           foldersMap[folderName].push({ file, topicName });
         });
 
-        // Renderiza cada pasta
+        let folderIdx = 0;
         for (let folderName in foldersMap) {
+          folderIdx++;
           const items = foldersMap[folderName];
           let folderCardsHtml = '';
+          let folderDueTotal = 0;
 
           for (let item of items) {
             const file = item.file;
@@ -402,18 +404,19 @@
             } catch(err) {}
 
             totalDueGlobal += dueCardsCount;
+            folderDueTotal += dueCardsCount;
 
             folderCardsHtml += `
               <div onclick="estudarDeck('${file.download_url || file.name}', '${file.name}', '${folderName}: ${cleanTopic}', false)" 
-                   class="bg-slate-900/60 hover:bg-slate-900 border border-slate-700/60 hover:border-indigo-500/50 p-4 rounded-xl cursor-pointer transition flex flex-col justify-between gap-3 group">
+                   class="bg-slate-900/80 hover:bg-slate-900 border border-slate-700/60 hover:border-indigo-500/50 p-3.5 rounded-xl cursor-pointer transition flex flex-col justify-between gap-2 group">
                 <div>
-                  <div class="flex justify-between items-start gap-2 mb-1">
-                    <h5 class="font-bold text-slate-200 text-sm group-hover:text-indigo-400 transition">${cleanTopic}</h5>
+                  <div class="flex justify-between items-start gap-2">
+                    <h5 class="font-bold text-slate-200 text-xs group-hover:text-indigo-400 transition">${cleanTopic}</h5>
                     <span class="text-[10px] bg-slate-800 text-slate-400 px-1.5 py-0.5 rounded">${totalCardsCount} cards</span>
                   </div>
 
-                  <div class="space-y-1 my-2">
-                    <div class="flex justify-between text-[11px] font-semibold">
+                  <div class="space-y-1 my-1.5">
+                    <div class="flex justify-between text-[10px] font-semibold">
                       <span class="text-slate-400">Acertos</span>
                       <span id="pct-${file.name}" class="text-indigo-400">0%</span>
                     </div>
@@ -424,7 +427,7 @@
                   </div>
                 </div>
 
-                <div class="flex items-center justify-between text-[11px] pt-2 border-t border-slate-800">
+                <div class="flex items-center justify-between text-[10px] pt-1.5 border-t border-slate-800">
                   <span class="text-slate-400">Hoje:</span>
                   <span class="font-semibold ${dueCardsCount > 0 ? 'text-amber-400' : 'text-emerald-400'}">
                     ${dueCardsCount > 0 ? `${dueCardsCount} pendentes` : '✓ Em dia'}
@@ -435,23 +438,32 @@
           }
 
           const folderHtml = `
-            <div class="bg-slate-800/80 border border-slate-700/80 rounded-2xl p-5 shadow-lg space-y-4">
-              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-700/50 pb-3">
-                <div class="flex items-center gap-2">
-                  <span class="text-2xl">📂</span>
+            <div class="bg-slate-800/80 border border-slate-700/80 rounded-2xl overflow-hidden shadow-lg transition">
+              
+              <!-- Cabeçalho Clicável da Pasta -->
+              <div class="p-4 flex items-center justify-between gap-3 bg-slate-800 hover:bg-slate-750 transition cursor-pointer select-none" onclick="toggleFolder(${folderIdx})">
+                <div class="flex items-center gap-3">
+                  <span id="folder-arrow-${folderIdx}" class="text-xs text-indigo-400 font-bold">▼</span>
+                  <span class="text-xl">📂</span>
                   <div>
-                    <h4 class="text-lg font-bold text-indigo-300">${folderName}</h4>
-                    <p class="text-xs text-slate-400">${items.length} tema(s) nesta especialidade</p>
+                    <h4 class="font-bold text-slate-100 text-base">${folderName}</h4>
+                    <p class="text-xs text-slate-400">${items.length} tema(s) ${folderDueTotal > 0 ? `• <span class="text-amber-400 font-semibold">${folderDueTotal} pendentes hoje</span>` : '• <span class="text-emerald-400">Em dia</span>'}</p>
                   </div>
                 </div>
-                <button onclick="estudarMegaDeck('${folderName}')" class="bg-indigo-600/90 hover:bg-indigo-500 text-white text-xs font-semibold py-2 px-4 rounded-xl transition shadow flex items-center justify-center gap-1.5">
-                  ⚡ Mega-Deck (Estudar ${folderName})
+
+                <!-- Botão Mega-Deck Direto da Especialidade -->
+                <button onclick="event.stopPropagation(); estudarMegaDeck('${folderName}')" class="bg-indigo-600/90 hover:bg-indigo-500 text-white text-xs font-semibold py-2 px-3.5 rounded-xl transition shadow flex items-center gap-1.5">
+                  ⚡ Mega-Deck (${folderName})
                 </button>
               </div>
 
-              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                ${folderCardsHtml}
+              <!-- Conteúdo Retrátil (Escondido por padrão) -->
+              <div id="folder-content-${folderIdx}" class="hidden p-4 bg-slate-950/40 border-t border-slate-700/50">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  ${folderCardsHtml}
+                </div>
               </div>
+
             </div>
           `;
 
@@ -460,7 +472,7 @@
 
         dueCountEl.textContent = totalDueGlobal;
         if (totalDueGlobal > 0) {
-          srsSummaryText.textContent = `Você tem ${totalDueGlobal} cards aguardando revisão hoje entre todas as especialidades.`;
+          srsSummaryText.textContent = `Você tem ${totalDueGlobal} cards aguardando revisão hoje.`;
           startDueBtn.disabled = false;
         } else {
           srsSummaryText.textContent = "Parabéns! Suas revisões estão todas em dia.";
@@ -473,7 +485,7 @@
         foldersGrid.innerHTML = `
           <div class="text-center py-10 bg-slate-800/40 rounded-2xl border border-slate-800">
             <p class="text-slate-400 font-medium">Nenhum PDF encontrado no repositório.</p>
-            <p class="text-xs text-slate-500 mt-1">Nomeie seus arquivos como "ESPECIALIDADE - Tema.pdf" para organizá-los em pastas!</p>
+            <p class="text-xs text-slate-500 mt-1">Nomeie seus arquivos como "ESPECIALIDADE - Tema.pdf" para organizá-los!</p>
           </div>
         `;
       }
@@ -481,7 +493,6 @@
 
     carregarBibliotecaGitHub();
 
-    /* MEGA-DECK DA PASTA DA ESPECIALIDADE */
     async function estudarMegaDeck(folderName) {
       const items = foldersMap[folderName];
       if (!items || items.length === 0) return;
@@ -700,7 +711,7 @@
     });
 
     resetSrsBtn.addEventListener('click', () => {
-      if (confirm("Deseja apagar todo o histórico de agendamentos do SRS? Todos os cards voltarão a ser considerados 'novos'.")) {
+      if (confirm("Deseja apagar todo o histórico de agendamentos do SRS?")) {
         localStorage.removeItem('flashcards_srs_data');
         carregarBibliotecaGitHub();
       }
