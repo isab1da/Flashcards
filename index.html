@@ -3,7 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Flashcards Medicina - Pastas Retráteis</title>
+  <title>Flashcards Medicina - Aproveitamento Ponderado</title>
+
+  <!-- Ícones PWA / iOS -->
+  <link rel="apple-touch-icon" sizes="180x180" href="icon.png">
+  <link rel="icon" type="image/png" href="icon.png">
+
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- PDF.js -->
@@ -75,18 +80,18 @@
     <!-- Desempenho Geral -->
     <section class="bg-slate-800/80 border border-slate-700/80 rounded-2xl p-6 shadow-xl">
       <h3 class="text-lg font-bold text-slate-100 mb-2 flex items-center gap-2">
-        <span>📊</span> Aproveitamento Geral
+        <span>📊</span> Índices de Domínio Geral
       </h3>
       <div class="space-y-2">
         <div class="flex justify-between text-sm font-medium">
-          <span class="text-slate-300">Taxa de Acerto Geral</span>
+          <span class="text-slate-300">Aproveitamento Ponderado</span>
           <span id="overall-percentage" class="text-indigo-400 font-bold">0%</span>
         </div>
         <div class="w-full bg-slate-900 h-3.5 rounded-full overflow-hidden border border-slate-700/50">
           <div id="overall-bar" class="bg-indigo-500 h-full rounded-full transition-all duration-500" style="width: 0%"></div>
         </div>
         <div class="flex justify-between text-xs text-slate-500 pt-1">
-          <span id="overall-stats-text">0 acertos / 0 erros</span>
+          <span id="overall-stats-text">0 revisões realizadas</span>
           <div class="flex gap-4">
             <button id="reset-stats-btn" class="text-slate-500 hover:text-rose-400 underline transition">Zerar Estatísticas</button>
             <button id="reset-srs-btn" class="text-slate-500 hover:text-rose-400 underline transition">Zerar Agendamento SRS</button>
@@ -114,8 +119,7 @@
     <div class="w-full flex justify-between items-center mb-2 px-2 text-xs text-slate-400">
       <span id="current-deck-title" class="font-bold text-indigo-400 uppercase tracking-wider">Especialidade / Tema</span>
       <div class="flex gap-3 font-semibold">
-        <span class="text-emerald-400">✓ <span id="session-rights">0</span></span>
-        <span class="text-rose-400">✗ <span id="session-wrongs">0</span></span>
+        <span class="text-emerald-400" title="Domínio acumulado na sessão">Domínio: <span id="session-score">0</span> pts</span>
       </div>
       <span id="card-counter" class="text-slate-300 font-medium">Card 1 de 1</span>
     </div>
@@ -145,19 +149,19 @@
     <div id="srs-buttons" class="w-full grid grid-cols-4 gap-2">
       <button onclick="responderSRS(1)" class="bg-rose-900/40 hover:bg-rose-800/70 border border-rose-700/50 text-rose-200 py-3 rounded-xl flex flex-col items-center transition">
         <span class="font-bold text-sm">Errei</span>
-        <span class="text-[10px] opacity-75">1 dia</span>
+        <span class="text-[10px] opacity-75">0% (1 dia)</span>
       </button>
       <button onclick="responderSRS(2)" class="bg-amber-900/40 hover:bg-amber-800/70 border border-amber-700/50 text-amber-200 py-3 rounded-xl flex flex-col items-center transition">
         <span class="font-bold text-sm">Difícil</span>
-        <span class="text-[10px] opacity-75">x1.2</span>
+        <span class="text-[10px] opacity-75">50% (x1.2)</span>
       </button>
       <button onclick="responderSRS(3)" class="bg-emerald-900/40 hover:bg-emerald-800/70 border border-emerald-700/50 text-emerald-200 py-3 rounded-xl flex flex-col items-center transition">
         <span class="font-bold text-sm">Bom</span>
-        <span class="text-[10px] opacity-75">x2.5</span>
+        <span class="text-[10px] opacity-75">85% (x2.5)</span>
       </button>
       <button onclick="responderSRS(4)" class="bg-sky-900/40 hover:bg-sky-800/70 border border-sky-700/50 text-sky-200 py-3 rounded-xl flex flex-col items-center transition">
         <span class="font-bold text-sm">Fácil</span>
-        <span class="text-[10px] opacity-75">x3.5</span>
+        <span class="text-[10px] opacity-75">100% (x3.5)</span>
       </button>
     </div>
     <p class="text-xs text-slate-500 text-center">
@@ -172,8 +176,10 @@
     let foldersMap = {};
     let cardsDeck = [];
     let currentCardIndex = 0;
-    let sessionRights = 0;
-    let sessionWrongs = 0;
+    
+    // Pontuação Ponderada da Sessão
+    let sessionPoints = 0;
+    let sessionTotalCards = 0;
 
     const dashboardView = document.getElementById('dashboard-view');
     const studyView = document.getElementById('study-view');
@@ -195,12 +201,19 @@
     const cardInner = document.getElementById('card-inner');
     const cardCounter = document.getElementById('card-counter');
     const currentDeckTitle = document.getElementById('current-deck-title');
-    const sessionRightsEl = document.getElementById('session-rights');
-    const sessionWrongsEl = document.getElementById('session-wrongs');
+    const sessionScoreEl = document.getElementById('session-score');
 
     const pathSegments = window.location.pathname.split('/').filter(Boolean);
     const githubUser = window.location.hostname.split('.')[0];
     const repoName = pathSegments[0] || '';
+
+    // Mapeamento de Pontos por Avaliação (0 a 100)
+    const ratingWeights = {
+      1: 0,   // Errei = 0%
+      2: 50,  // Difícil = 50%
+      3: 85,  // Bom = 85%
+      4: 100  // Fácil = 100%
+    };
 
     function getStats() {
       const stats = localStorage.getItem('flashcards_med_stats');
@@ -211,32 +224,38 @@
       localStorage.setItem('flashcards_med_stats', JSON.stringify(stats));
     }
 
-    function recordAnswer(deckKey, isRight) {
+    function recordAnswerPonderada(deckKey, rating) {
       const stats = getStats();
-      if (!stats[deckKey]) stats[deckKey] = { rights: 0, wrongs: 0 };
-      if (isRight) { stats[deckKey].rights++; sessionRights++; }
-      else { stats[deckKey].wrongs++; sessionWrongs++; }
+      if (!stats[deckKey]) stats[deckKey] = { points: 0, count: 0 };
+      
+      const pts = ratingWeights[rating] || 0;
+      stats[deckKey].points += pts;
+      stats[deckKey].count += 1;
+
+      sessionPoints += pts;
+      sessionTotalCards += 1;
+
       saveStats(stats);
       updateSessionUI();
     }
 
-    function calculatePercentage(rights, wrongs) {
-      const total = rights + wrongs;
-      return total === 0 ? 0 : Math.round((rights / total) * 100);
-    }
-
     function updateDashboardStats() {
       const stats = getStats();
-      let totalRights = 0;
-      let totalWrongs = 0;
+      let totalPoints = 0;
+      let totalCount = 0;
 
       pdfFilesList.forEach(file => {
         const key = file.name;
-        const deckStats = stats[key] || { rights: 0, wrongs: 0 };
-        totalRights += deckStats.rights;
-        totalWrongs += deckStats.wrongs;
+        const deckStats = stats[key] || { points: 0, count: 0 };
+        
+        // Trata migração de formato antigo de stats caso existam registros prévios
+        let deckPts = deckStats.points ?? ((deckStats.rights || 0) * 100);
+        let deckCnt = deckStats.count ?? ((deckStats.rights || 0) + (deckStats.wrongs || 0));
 
-        const pct = calculatePercentage(deckStats.rights, deckStats.wrongs);
+        totalPoints += deckPts;
+        totalCount += deckCnt;
+
+        const pct = deckCnt === 0 ? 0 : Math.round(deckPts / deckCnt);
         const barEl = document.getElementById(`bar-${key}`);
         const pctEl = document.getElementById(`pct-${key}`);
         const textEl = document.getElementById(`text-${key}`);
@@ -244,19 +263,19 @@
         if (barEl && pctEl && textEl) {
           pctEl.textContent = `${pct}%`;
           barEl.style.width = `${pct}%`;
-          textEl.textContent = `${deckStats.rights} acertos / ${deckStats.wrongs} erros`;
+          textEl.textContent = `${deckCnt} revisões realizadas`;
 
-          if (pct >= 70) barEl.className = "h-full rounded-full transition-all duration-500 bg-emerald-500";
-          else if (pct >= 40) barEl.className = "h-full rounded-full transition-all duration-500 bg-amber-500";
+          if (pct >= 80) barEl.className = "h-full rounded-full transition-all duration-500 bg-emerald-500";
+          else if (pct >= 60) barEl.className = "h-full rounded-full transition-all duration-500 bg-amber-500";
           else if (pct > 0) barEl.className = "h-full rounded-full transition-all duration-500 bg-rose-500";
           else barEl.className = "h-full rounded-full transition-all duration-500 bg-slate-600";
         }
       });
 
-      const overallPct = calculatePercentage(totalRights, totalWrongs);
+      const overallPct = totalCount === 0 ? 0 : Math.round(totalPoints / totalCount);
       overallPercentage.textContent = `${overallPct}%`;
       overallBar.style.width = `${overallPct}%`;
-      overallStatsText.textContent = `${totalRights} acertos / ${totalWrongs} erros totais`;
+      overallStatsText.textContent = `${totalCount} revisões acumuladas`;
     }
 
     function getSrsData() {
@@ -288,7 +307,7 @@
       const cardKey = getCardKey(activeCard);
       const srsData = getSrsData();
 
-      recordAnswer(activeCard.fileKey, rating > 1);
+      recordAnswerPonderada(activeCard.fileKey, rating);
 
       let cardInfo = srsData[cardKey] || { interval: 0, factor: 2.5, reviews: 0, nextReview: getTodayString() };
 
@@ -325,8 +344,8 @@
           currentCardIndex++;
           renderCurrentCard();
         } else {
-          const pctSessao = calculatePercentage(sessionRights, sessionWrongs);
-          alert(`🎉 Sessão Concluída!\n\nAcertos: ${sessionRights}\nErros: ${sessionWrongs}\nAproveitamento: ${pctSessao}%`);
+          const pctSessao = sessionTotalCards === 0 ? 0 : Math.round(sessionPoints / sessionTotalCards);
+          alert(`🎉 Sessão Concluída!\n\nCards revisados: ${sessionTotalCards}\nAproveitamento Ponderado: ${pctSessao}%`);
           exibirDashboard();
         }
       }, 150);
@@ -417,13 +436,13 @@
 
                   <div class="space-y-1 my-1.5">
                     <div class="flex justify-between text-[10px] font-semibold">
-                      <span class="text-slate-400">Acertos</span>
+                      <span class="text-slate-400">Índice Domínio</span>
                       <span id="pct-${file.name}" class="text-indigo-400">0%</span>
                     </div>
                     <div class="w-full bg-slate-950 h-1.5 rounded-full overflow-hidden border border-slate-800">
                       <div id="bar-${file.name}" class="bg-slate-600 h-full rounded-full transition-all duration-500" style="width: 0%"></div>
                     </div>
-                    <div id="text-${file.name}" class="text-[9px] text-slate-500 text-right">0/0</div>
+                    <div id="text-${file.name}" class="text-[9px] text-slate-500 text-right">0 revisões</div>
                   </div>
                 </div>
 
@@ -439,8 +458,6 @@
 
           const folderHtml = `
             <div class="bg-slate-800/80 border border-slate-700/80 rounded-2xl overflow-hidden shadow-lg transition">
-              
-              <!-- Cabeçalho Clicável da Pasta -->
               <div class="p-4 flex items-center justify-between gap-3 bg-slate-800 hover:bg-slate-750 transition cursor-pointer select-none" onclick="toggleFolder(${folderIdx})">
                 <div class="flex items-center gap-3">
                   <span id="folder-arrow-${folderIdx}" class="text-xs text-indigo-400 font-bold">▼</span>
@@ -451,19 +468,16 @@
                   </div>
                 </div>
 
-                <!-- Botão Mega-Deck Direto da Especialidade -->
                 <button onclick="event.stopPropagation(); estudarMegaDeck('${folderName}')" class="bg-indigo-600/90 hover:bg-indigo-500 text-white text-xs font-semibold py-2 px-3.5 rounded-xl transition shadow flex items-center gap-1.5">
                   ⚡ Mega-Deck (${folderName})
                 </button>
               </div>
 
-              <!-- Conteúdo Retrátil (Escondido por padrão) -->
               <div id="folder-content-${folderIdx}" class="hidden p-4 bg-slate-950/40 border-t border-slate-700/50">
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                   ${folderCardsHtml}
                 </div>
               </div>
-
             </div>
           `;
 
@@ -498,8 +512,8 @@
       if (!items || items.length === 0) return;
 
       currentDeckTitle.textContent = `📂 MEGA-DECK: ${folderName}`;
-      sessionRights = 0;
-      sessionWrongs = 0;
+      sessionPoints = 0;
+      sessionTotalCards = 0;
       updateSessionUI();
 
       cardsDeck = [];
@@ -518,8 +532,8 @@
 
     async function estudarDeck(url, key, titulo, apenasDevidos = false) {
       currentDeckTitle.textContent = titulo;
-      sessionRights = 0;
-      sessionWrongs = 0;
+      sessionPoints = 0;
+      sessionTotalCards = 0;
       updateSessionUI();
 
       cardsDeck = [];
@@ -534,8 +548,8 @@
       if (pdfFilesList.length === 0) return;
 
       currentDeckTitle.textContent = "🔥 REVISÃO DO DIA (TODAS AS ESPECIALIDADES)";
-      sessionRights = 0;
-      sessionWrongs = 0;
+      sessionPoints = 0;
+      sessionTotalCards = 0;
       updateSessionUI();
 
       cardsDeck = [];
@@ -559,8 +573,8 @@
       if (pdfFilesList.length === 0) return;
 
       currentDeckTitle.textContent = "🎲 ESTUDO LIVRE (GERAL)";
-      sessionRights = 0;
-      sessionWrongs = 0;
+      sessionPoints = 0;
+      sessionTotalCards = 0;
       updateSessionUI();
 
       cardsDeck = [];
@@ -587,15 +601,15 @@
         const pdfDoc = await pdfjsLib.getDocument(typedarray).promise;
         cardsDeck = [];
         currentDeckTitle.textContent = file.name.replace(/\.pdf$/i, '');
-        sessionRights = 0;
-        sessionWrongs = 0;
+        sessionPoints = 0;
+        sessionTotalCards = 0;
         updateSessionUI();
 
         extrairCardsDePdf(pdfDoc, `TEMP_${file.name}`, false);
         exibirTelaEstudo();
         iniciarFlashcards();
       };
-      fileReader.readAsBuffer(file);
+      fileReader.readAsArrayBuffer(file);
     });
 
     function extrairCardsDePdf(pdfDoc, fileKey, apenasDevidos) {
@@ -644,8 +658,8 @@
     homeBtn.addEventListener('click', exibirDashboard);
 
     function updateSessionUI() {
-      sessionRightsEl.textContent = sessionRights;
-      sessionWrongsEl.textContent = sessionWrongs;
+      const avg = sessionTotalCards === 0 ? 0 : Math.round(sessionPoints / sessionTotalCards);
+      sessionScoreEl.textContent = `${avg}% (${sessionTotalCards} cards)`;
     }
 
     function iniciarFlashcards() {
