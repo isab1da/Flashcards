@@ -124,22 +124,39 @@
       <span id="card-counter" class="text-slate-300 font-medium">Card 1 de 1</span>
     </div>
 
-    <div id="card-container" class="w-full h-[430px] perspective relative">
-      <div id="card-inner" class="card-inner draggable-card relative w-full h-full rounded-2xl shadow-2xl bg-slate-800 border border-slate-700">
-        <div class="card-front absolute inset-0 w-full h-full flex flex-col items-center justify-center p-4 rounded-2xl">
+    <div id="card-container" class="w-full h-[470px] perspective relative">
+      <div id="card-inner" class="card-inner draggable-card relative w-full h-full rounded-2xl shadow-2xl bg-slate-800 border border-slate-700 flex flex-col">
+        
+        <!-- Frente -->
+        <div class="card-front absolute inset-0 w-full h-full flex flex-col items-center justify-center p-4 rounded-2xl bg-slate-800">
           <span class="absolute top-3 left-4 text-xs font-semibold uppercase tracking-wider text-indigo-400">Frente (Pergunta)</span>
-          <div class="w-full h-full flex items-center justify-center overflow-hidden pt-6 pointer-events-none">
+          <div class="w-full h-full flex items-center justify-center overflow-hidden pt-6 pb-6 pointer-events-none">
             <canvas id="front-canvas" class="max-w-full max-h-full object-contain rounded"></canvas>
           </div>
           <p class="absolute bottom-3 text-xs text-slate-500">Clique para ver a resposta</p>
         </div>
 
-        <div class="card-back absolute inset-0 w-full h-full flex flex-col items-center justify-center p-4 rounded-2xl">
-          <span class="absolute top-3 left-4 text-xs font-semibold uppercase tracking-wider text-emerald-400">Verso (Resposta)</span>
-          <div class="w-full h-full flex items-center justify-center overflow-hidden pt-6 pointer-events-none">
+        <!-- Verso -->
+        <div class="card-back absolute inset-0 w-full h-full flex flex-col justify-between p-3 rounded-2xl bg-slate-800 overflow-y-auto">
+          <div class="flex justify-between items-center w-full px-1 pt-1 shrink-0">
+            <span class="text-xs font-semibold uppercase tracking-wider text-emerald-400">Verso (Resposta)</span>
+          </div>
+
+          <!-- Canvas da Resposta (Flexível e sem cobrir a nota) -->
+          <div class="w-full flex-1 flex items-center justify-center overflow-hidden my-1 pointer-events-none min-h-[180px]">
             <canvas id="back-canvas" class="max-w-full max-h-full object-contain rounded"></canvas>
           </div>
+
+          <!-- Bloco de Observação Discreto no Verso -->
+          <div class="w-full bg-slate-900/90 border border-slate-700/60 rounded-xl p-2 shrink-0" onclick="event.stopPropagation()">
+            <div class="flex justify-between items-center mb-1">
+              <span class="text-[10px] font-semibold text-amber-400 flex items-center gap-1">📝 Observação / Associação</span>
+              <button onclick="salvarObservacaoCard()" class="text-[10px] bg-indigo-600 hover:bg-indigo-500 text-white px-2 py-0.5 rounded transition">Salvar</button>
+            </div>
+            <textarea id="card-note-input" rows="2" placeholder="Digite uma dica ou associação para este card..." class="w-full bg-slate-950 text-slate-200 text-xs p-1.5 rounded border border-slate-800 focus:outline-none focus:border-indigo-500 resize-none"></textarea>
+          </div>
         </div>
+
       </div>
     </div>
   </main>
@@ -176,7 +193,6 @@
     let sessionPoints = 0;
     let sessionTotalCards = 0;
 
-    // Web Audio API para som de acerto
     let audioCtx = null;
     function playSuccessSound() {
       try {
@@ -189,7 +205,6 @@
 
         const now = audioCtx.currentTime;
 
-        // Nota 1 (Mi / E5)
         const osc1 = audioCtx.createOscillator();
         const gain1 = audioCtx.createGain();
         osc1.type = 'sine';
@@ -201,7 +216,6 @@
         osc1.start(now);
         osc1.stop(now + 0.15);
 
-        // Nota 2 (Si / B5)
         const osc2 = audioCtx.createOscillator();
         const gain2 = audioCtx.createGain();
         osc2.type = 'sine';
@@ -238,6 +252,7 @@
     const cardCounter = document.getElementById('card-counter');
     const currentDeckTitle = document.getElementById('current-deck-title');
     const sessionScoreEl = document.getElementById('session-score');
+    const cardNoteInput = document.getElementById('card-note-input');
 
     const pathSegments = window.location.pathname.split('/').filter(Boolean);
     const githubUser = window.location.hostname.split('.')[0];
@@ -249,6 +264,23 @@
       3: 85,  // Bom
       4: 100  // Fácil
     };
+
+    /* SISTEMA DE OBSERVAÇÕES POR CARD */
+    function getCardNotesData() {
+      const notes = localStorage.getItem('flashcards_card_notes');
+      return notes ? JSON.parse(notes) : {};
+    }
+
+    function salvarObservacaoCard() {
+      if (cardsDeck.length === 0) return;
+      const activeCard = cardsDeck[currentCardIndex];
+      const cardKey = getCardKey(activeCard);
+      const notesData = getCardNotesData();
+
+      notesData[cardKey] = cardNoteInput.value;
+      localStorage.setItem('flashcards_card_notes', JSON.stringify(notesData));
+      alert("Observação salva com sucesso para este card!");
+    }
 
     function getStats() {
       const stats = localStorage.getItem('flashcards_med_stats');
@@ -337,7 +369,6 @@
     function responderSRS(rating) {
       if (cardsDeck.length === 0) return;
 
-      // Som para 'Bom' (3) e 'Fácil' (4)
       if (rating === 3 || rating === 4) {
         playSuccessSound();
       }
@@ -726,6 +757,11 @@
         clearCanvas('back-canvas');
       }
 
+      // Carrega a observação salva deste card específico
+      const cardKey = getCardKey(currentCard);
+      const notesData = getCardNotesData();
+      cardNoteInput.value = notesData[cardKey] || "";
+
       cardCounter.textContent = `Card ${currentCardIndex + 1} de ${cardsDeck.length}`;
     }
 
@@ -747,12 +783,15 @@
       ctx.clearRect(0, 0, canvas.width, canvas.height);
     }
 
-    cardInner.addEventListener('click', () => {
+    cardInner.addEventListener('click', (e) => {
+      // Evita virar o card se o usuário estiver clicando no campo de notas
+      if (e.target.closest('#card-note-input') || e.target.closest('button')) return;
       cardInner.classList.toggle('flipped');
     });
 
     document.addEventListener('keydown', (e) => {
       if (studyView.classList.contains('hidden')) return;
+      if (document.activeElement === cardNoteInput) return; // Permite digitar texto livremente
 
       if (e.code === 'Space') {
         e.preventDefault();
